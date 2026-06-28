@@ -1,0 +1,224 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Theme tokens ───────────────────────────────────────────── */
+:root {
+  --bg: #ffffff;
+  --bg-soft: #f7f7f8;
+  --panel: #fafafa;
+  --card: #ffffff;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
+  --text: #18181b;
+  --text-muted: #6b7280;
+  --text-faint: #9ca3af;
+  --accent: #e0a200;
+  --accent-2: #f5b301;
+  --accent-ink: #1a1500;
+  --user-bubble: #f4f4f5;
+  --user-bubble-border: rgba(0, 0, 0, 0.06);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.05);
+  --glass: rgba(255, 255, 255, 0.72);
+}
+
+html.dark {
+  --bg: #08080a;
+  --bg-soft: #0d0d10;
+  --panel: #0e0e11;
+  --card: #161619;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.13);
+  --text: #ededed;
+  --text-muted: #a1a1aa;
+  --text-faint: #6b6b73;
+  --accent: #f5c542;
+  --accent-2: #f5b301;
+  --accent-ink: #1a1500;
+  --user-bubble: rgba(245, 197, 66, 0.12);
+  --user-bubble-border: rgba(245, 197, 66, 0.22);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.35);
+  --glass: rgba(14, 14, 17, 0.7);
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Premium ambient glow in dark mode */
+html.dark body {
+  background:
+    radial-gradient(900px 500px at 100% -5%, rgba(245, 197, 66, 0.05), transparent 60%),
+    radial-gradient(700px 500px at 0% 100%, rgba(245, 197, 66, 0.035), transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
+/* ── Reusable surfaces ──────────────────────────────────────── */
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.premium-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.gold-gradient {
+  background: linear-gradient(135deg, #f7d774 0%, #f5b301 55%, #e0a200 100%);
+  color: var(--accent-ink);
+}
+.gold-gradient:hover {
+  filter: brightness(1.05);
+}
+
+.gold-glow {
+  box-shadow: 0 0 0 1px rgba(245, 179, 1, 0.25), 0 8px 24px rgba(245, 179, 1, 0.18);
+}
+
+.focus-glow:focus-within {
+  border-color: var(--accent-2) !important;
+  box-shadow: 0 0 0 3px rgba(245, 179, 1, 0.16);
+}
+
+.hover-card {
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+.hover-card:hover {
+  border-color: var(--accent-2) !important;
+  background: var(--bg-soft) !important;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-faint);
+}
+
+/* ── Markdown message content ───────────────────────────────── */
+.prose-msg {
+  font-size: 15.5px;
+  line-height: 1.9;
+  word-break: break-word;
+}
+.prose-msg > :first-child {
+  margin-top: 0;
+}
+.prose-msg > :last-child {
+  margin-bottom: 0;
+}
+.prose-msg p {
+  margin: 0.6em 0;
+}
+.prose-msg h1,
+.prose-msg h2,
+.prose-msg h3 {
+  font-weight: 800;
+  line-height: 1.4;
+  margin: 1em 0 0.5em;
+}
+.prose-msg h1 {
+  font-size: 1.3em;
+}
+.prose-msg h2 {
+  font-size: 1.18em;
+}
+.prose-msg h3 {
+  font-size: 1.06em;
+}
+.prose-msg ul,
+.prose-msg ol {
+  margin: 0.5em 0;
+  padding-inline-start: 1.4em;
+}
+.prose-msg li {
+  margin: 0.3em 0;
+}
+.prose-msg ul {
+  list-style: disc;
+}
+.prose-msg ol {
+  list-style: decimal;
+}
+.prose-msg strong {
+  font-weight: 800;
+  color: var(--text);
+}
+.prose-msg a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.prose-msg code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  padding: 0.1em 0.4em;
+  border-radius: 6px;
+}
+.prose-msg pre {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  padding: 0.9em 1em;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 0.7em 0;
+}
+.prose-msg pre code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+.prose-msg blockquote {
+  border-inline-start: 3px solid var(--accent-2);
+  padding-inline-start: 0.9em;
+  margin: 0.7em 0;
+  opacity: 0.9;
+}
+.prose-msg table {
+  border-collapse: collapse;
+  margin: 0.7em 0;
+  width: 100%;
+  font-size: 0.92em;
+}
+.prose-msg th,
+.prose-msg td {
+  border: 1px solid var(--border-strong);
+  padding: 0.4em 0.6em;
+  text-align: start;
+}
+.prose-msg .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.3em 0;
+  direction: ltr;
+}
+.prose-msg .katex {
+  direction: ltr;
+  unicode-bidi: isolate;
+  display: inline-block;
+}
