@@ -749,7 +749,7 @@ export default function Chat() {
                   onClick={() => send(input)}
                   disabled={(!input.trim() && !pendingImage) || isStreaming}
                   aria-label={ar.send}
-                  className="gold-gradient mb-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-40"
+                  className="btn-send mb-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-40"
                   style={
                     (!input.trim() && !pendingImage) || isStreaming
                       ? { background: "var(--bg-soft)", color: "var(--text-faint)" }
@@ -811,7 +811,7 @@ function SidebarContent({
     <div className="flex h-full flex-col p-3">
       <button
         onClick={onNew}
-        className="gold-gradient mb-3 flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold transition"
+        className="btn-soft mb-3 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium"
       >
         <PlusIcon />
         {ar.newChat}

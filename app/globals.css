@@ -56,13 +56,9 @@ body {
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* Premium ambient glow in dark mode */
+/* Flat, clean background (ChatGPT/Gemini style) */
 html.dark body {
-  background:
-    radial-gradient(900px 500px at 100% -5%, rgba(245, 197, 66, 0.05), transparent 60%),
-    radial-gradient(700px 500px at 0% 100%, rgba(245, 197, 66, 0.035), transparent 55%),
-    var(--bg);
-  background-attachment: fixed;
+  background: var(--bg);
 }
 
 /* ── Reusable surfaces ──────────────────────────────────────── */
@@ -91,16 +87,34 @@ html.dark body {
 }
 
 .focus-glow:focus-within {
-  border-color: var(--accent-2) !important;
-  box-shadow: 0 0 0 3px rgba(245, 179, 1, 0.16);
+  border-color: var(--border-strong) !important;
 }
 
 .hover-card {
   transition: border-color 0.18s ease, background-color 0.18s ease;
 }
 .hover-card:hover {
-  border-color: var(--accent-2) !important;
+  border-color: var(--border-strong) !important;
   background: var(--bg-soft) !important;
+}
+
+/* Neutral buttons (ChatGPT/Gemini simplicity) */
+.btn-soft {
+  background: var(--card);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.btn-soft:hover {
+  background: var(--bg-soft);
+}
+.btn-send {
+  background: var(--text);
+  color: var(--bg);
+  transition: opacity 0.15s ease;
+}
+.btn-send:hover {
+  opacity: 0.85;
 }
 
 /* ── Scrollbar ──────────────────────────────────────────────── */
