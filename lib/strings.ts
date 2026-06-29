@@ -3,7 +3,7 @@
 // ───────────────────────────────────────────────────────────────
 
 export const ar = {
-  brand: "شميشة AI",
+  brand: "Chmicha AI",
   brandLetter: "ش",
   modelName: "Chmicha AI",
   modelSub: "GPT-4o",

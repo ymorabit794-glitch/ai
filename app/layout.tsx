@@ -17,7 +17,7 @@ const tajawal = Tajawal({
 });
 
 export const metadata: Metadata = {
-  title: "شميشة AI | Chmicha AI",
+  title: "Chmicha AI",
   description: "المساعد الذكي بأسلوب مغربي بلا فلتر.",
 };
 

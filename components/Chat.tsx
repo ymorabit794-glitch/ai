@@ -618,9 +618,7 @@ export default function Chat() {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-3xl px-4 py-6">
-            {empty ? (
-              <WelcomeCard onPick={send} />
-            ) : (
+            {!empty && (
               <div className="space-y-6">
                 {messages.map((m) => (
                   <MessageRow
@@ -1106,40 +1104,6 @@ function IconBtn({
 }
 
 /* ───────────────────────────── Welcome ───────────────────────────── */
-
-function WelcomeCard({ onPick }: { onPick: (t: string) => void }) {
-  return (
-    <div className="flex flex-col items-center px-2 py-16 text-center">
-      <BrandAvatar size={56} />
-      <h2
-        className="mt-5 font-display text-2xl font-extrabold"
-        style={{ color: "var(--text)" }}
-      >
-        {ar.welcomeTitle}
-      </h2>
-      <p className="mt-2 max-w-md text-sm" style={{ color: "var(--text-muted)" }}>
-        {ar.welcomeSub}
-      </p>
-
-      <div className="mt-8 grid w-full max-w-xl grid-cols-1 gap-2.5 sm:grid-cols-2">
-        {ar.suggestions.map((s) => (
-          <button
-            key={s}
-            onClick={() => onPick(s)}
-            className="hover-card rounded-2xl px-4 py-3 text-start text-sm"
-            style={{
-              background: "var(--card)",
-              border: "1px solid var(--border)",
-              color: "var(--text-muted)",
-            }}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 /* ───────────────────────────── Avatars ───────────────────────────── */
 
