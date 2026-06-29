@@ -742,7 +742,8 @@ export default function Chat() {
                   placeholder={genMode ? ar.genPlaceholder : ar.placeholder}
                   rows={1}
                   dir="auto"
-                  className="max-h-44 min-w-0 flex-1 resize-none bg-transparent px-2 py-3 text-base outline-none"
+                  wrap="off"
+                  className="min-w-0 flex-1 resize-none overflow-x-auto bg-transparent px-2 py-3 text-base outline-none"
                   style={{ color: "var(--text)" }}
                 />
 
