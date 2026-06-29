@@ -3,6 +3,7 @@ import { synthesizeSpeech } from "@/lib/elevenlabs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 // Accepts the final verdict text and returns MP3 audio bytes.
 export async function POST(req: NextRequest) {

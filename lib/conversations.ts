@@ -9,6 +9,7 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   ts?: number; // creation time (for timestamps); optional for older saved data
+  image?: string; // optional data-URL of an attached image (vision)
 }
 
 export interface Conversation {

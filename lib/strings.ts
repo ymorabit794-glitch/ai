@@ -42,6 +42,12 @@ export const ar = {
   placeholder: "اكتب رسالتك هنا...",
   send: "إرسال",
   sending: "كيفكر…",
+  attachImage: "أضف صورة",
+  removeImage: "حذف الصورة",
+  imageDefaultPrompt: "شنو هاد الصورة؟ علّق عليها.",
+  genImage: "توليد صورة",
+  genPlaceholder: "وصف الصورة اللي بغيتي نصاوب...",
+  generatingImage: "كيصاوب الصورة…",
 
   // Message actions
   copy: "نسخ",

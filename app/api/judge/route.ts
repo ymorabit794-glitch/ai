@@ -4,6 +4,7 @@ import { getSystemPrompt } from "@/lib/prompt";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 interface IncomingMessage {
   role: "user" | "assistant";
@@ -13,9 +14,13 @@ interface IncomingMessage {
 // Streams the judge's reply, given the whole conversation so far.
 export async function POST(req: NextRequest) {
   let messages: IncomingMessage[] = [];
+  let image: string | undefined;
   try {
     const body = await req.json();
     messages = Array.isArray(body?.messages) ? body.messages : [];
+    if (typeof body?.image === "string" && body.image.startsWith("data:image")) {
+      image = body.image;
+    }
   } catch {
     return new Response("Bad request", { status: 400 });
   }
@@ -52,7 +57,7 @@ export async function POST(req: NextRequest) {
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
-        for await (const chunk of streamLLM({ history, systemPrompt })) {
+        for await (const chunk of streamLLM({ history, systemPrompt, image })) {
           controller.enqueue(encoder.encode(chunk));
         }
       } catch (err) {

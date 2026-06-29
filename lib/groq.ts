@@ -21,27 +21,42 @@ function sanitize(text: string): string {
 export interface GroqStreamParams {
   history: ChatTurn[];
   systemPrompt: string;
+  image?: string; // data URL attached to the latest user turn (vision)
+  model?: string; // optional model override (e.g. a vision model)
 }
 
 export async function* streamGroqText({
   history,
   systemPrompt,
+  image,
+  model: modelOverride,
 }: GroqStreamParams): AsyncGenerator<string> {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     throw new Error("GROQ_API_KEY is not set. Add it to .env.local");
   }
 
-  const model = process.env.GROQ_MODEL || DEFAULT_MODEL;
+  const model = modelOverride || process.env.GROQ_MODEL || DEFAULT_MODEL;
 
   // Map our Gemini-style roles ("model") to OpenAI-style ("assistant").
-  const messages = [
+  const messages: Array<{ role: string; content: unknown }> = [
     { role: "system", content: systemPrompt },
     ...history.map((t) => ({
       role: t.role === "model" ? "assistant" : "user",
-      content: t.text,
+      content: t.text as unknown,
     })),
   ];
+
+  // Attach the image to the last user turn as multimodal content.
+  if (image && messages.length > 1) {
+    const last = messages[messages.length - 1];
+    if (last.role === "user") {
+      last.content = [
+        { type: "text", text: typeof last.content === "string" ? last.content : "" },
+        { type: "image_url", image_url: { url: image } },
+      ];
+    }
+  }
 
   const body: Record<string, unknown> = {
     model,

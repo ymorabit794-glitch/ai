@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 // Speech-to-text via Groq Whisper (free, great at Arabic/Darija).
 // Receives an audio blob, returns the transcribed Arabic text.

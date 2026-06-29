@@ -17,6 +17,14 @@ function uid() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
+// Quick gate: does the message look like an image request? (Confirmed by
+// the /api/intent classifier before actually generating.)
+function hasImageIntent(t: string): boolean {
+  return /(صورة|تصويرة|تصور|صور لي|صاوب|ولّد|ولد لي|رسم|ارسم|رسملي|تصميم|بوستر|لوگو|logo|poster|draw|image|picture|photo|generate|render|dessine|imagine)/i.test(
+    t
+  );
+}
+
 function formatTime(ts?: number) {
   if (!ts) return "";
   try {
@@ -26,6 +34,66 @@ function formatTime(ts?: number) {
     });
   } catch {
     return "";
+  }
+}
+
+// Read an image File and downscale it to keep the base64 payload small.
+async function fileToScaledDataUrl(
+  file: File,
+  max = 1024,
+  quality = 0.8
+): Promise<string> {
+  const dataUrl = await new Promise<string>((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result as string);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+  const img = await new Promise<HTMLImageElement>((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = rej;
+    i.src = dataUrl;
+  });
+  let { width, height } = img;
+  if (width > max || height > max) {
+    const scale = max / Math.max(width, height);
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return dataUrl;
+  ctx.drawImage(img, 0, 0, width, height);
+  return canvas.toDataURL("image/jpeg", quality);
+}
+
+// Recompress a data-URL image (keeps localStorage small for generated PNGs).
+async function scaleDataUrl(dataUrl: string, max = 1024, quality = 0.85) {
+  try {
+    const img = await new Promise<HTMLImageElement>((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = rej;
+      i.src = dataUrl;
+    });
+    let { width, height } = img;
+    if (width > max || height > max) {
+      const s = max / Math.max(width, height);
+      width = Math.round(width * s);
+      height = Math.round(height * s);
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return dataUrl;
+    ctx.drawImage(img, 0, 0, width, height);
+    return canvas.toDataURL("image/jpeg", quality);
+  } catch {
+    return dataUrl;
   }
 }
 
@@ -75,11 +143,15 @@ export default function Chat() {
   const [search, setSearch] = useState("");
   const [showAll, setShowAll] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [genMode, setGenMode] = useState(false);
+  const [genLoadingId, setGenLoadingId] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     setConversations(loadConversations());
@@ -97,16 +169,125 @@ export default function Chat() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  async function send(text: string) {
-    const clean = text.trim();
-    if (!clean || isStreaming) return;
-
+  // Image generation via /api/generate (Cloudflare Flux → Pollinations).
+  // displayText = what the user typed; imagePrompt = prompt used to render.
+  async function generateImage(displayText: string, imagePrompt?: string) {
+    const prompt = imagePrompt || displayText;
     const now = Date.now();
     const userMsg: ChatMessage = {
       id: uid(),
       role: "user",
-      content: clean,
+      content: displayText,
       ts: now,
+    };
+    const assistantId = uid();
+    const assistantMsg: ChatMessage = {
+      id: assistantId,
+      role: "assistant",
+      content: "",
+      ts: now,
+    };
+
+    const creating = !activeId;
+    const convId = activeId ?? uid();
+    setConversations((prev) => {
+      if (creating) {
+        return [
+          {
+            id: convId,
+            title: titleFrom(displayText),
+            messages: [userMsg, assistantMsg],
+            updatedAt: now,
+          },
+          ...prev,
+        ];
+      }
+      return prev.map((c) =>
+        c.id === convId
+          ? {
+              ...c,
+              messages: [...c.messages, userMsg, assistantMsg],
+              updatedAt: now,
+            }
+          : c
+      );
+    });
+    setActiveId(convId);
+    setInput("");
+    setGenLoadingId(assistantId);
+
+    const patch = (fields: Partial<ChatMessage>) =>
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === convId
+            ? {
+                ...c,
+                updatedAt: Date.now(),
+                messages: c.messages.map((m) =>
+                  m.id === assistantId ? { ...m, ...fields } : m
+                ),
+              }
+            : c
+        )
+      );
+
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = await res.json();
+      let img: string | undefined = data?.image;
+      // Shrink base64 (Cloudflare) before storing; URLs (Pollinations) as-is.
+      if (img && img.startsWith("data:")) img = await scaleDataUrl(img);
+      if (img) patch({ image: img });
+      else patch({ content: "تعذّر توليد الصورة. عاود المحاولة." });
+    } catch {
+      patch({ content: "تعذّر توليد الصورة. عاود المحاولة." });
+    } finally {
+      setGenLoadingId(null);
+    }
+  }
+
+  async function send(text: string) {
+    const clean = text.trim();
+    const image = pendingImage;
+    if ((!clean && !image) || isStreaming || genLoadingId) return;
+
+    // Manual image-generation mode (🪄): always generate.
+    if (genMode && clean && !image) {
+      generateImage(clean);
+      return;
+    }
+
+    // Auto-detect: if the message looks like an image request, classify it
+    // and generate instead of chatting.
+    if (clean && !image && hasImageIntent(clean)) {
+      try {
+        const r = await fetch("/api/intent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: clean }),
+        });
+        const d = await r.json();
+        if (d?.action === "image" && d?.prompt) {
+          generateImage(clean, d.prompt);
+          return;
+        }
+      } catch {
+        /* fall through to normal chat */
+      }
+    }
+
+    const now = Date.now();
+    const contentText = clean || (image ? ar.imageDefaultPrompt : "");
+    const userMsg: ChatMessage = {
+      id: uid(),
+      role: "user",
+      content: contentText,
+      ts: now,
+      ...(image ? { image } : {}),
     };
     const assistantId = uid();
 
@@ -123,7 +304,7 @@ export default function Chat() {
       if (creating) {
         const fresh: Conversation = {
           id: convId,
-          title: titleFrom(clean),
+          title: titleFrom(contentText),
           messages: [
             userMsg,
             { id: assistantId, role: "assistant", content: "", ts: now },
@@ -149,6 +330,7 @@ export default function Chat() {
 
     setActiveId(convId);
     setInput("");
+    setPendingImage(null);
     setIsStreaming(true);
 
     const patchAssistant = (content: string) =>
@@ -170,7 +352,7 @@ export default function Chat() {
       const res = await fetch("/api/judge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: payload }),
+        body: JSON.stringify({ messages: payload, image: image ?? undefined }),
       });
 
       if (!res.ok || !res.body) throw new Error("request failed");
@@ -227,6 +409,19 @@ export default function Chat() {
   function deleteConversation(id: string) {
     setConversations((prev) => prev.filter((c) => c.id !== id));
     if (activeId === id) setActiveId(null);
+  }
+
+  async function onPickImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const url = await fileToScaledDataUrl(file);
+      setPendingImage(url);
+      taRef.current?.focus();
+    } catch {
+      /* ignore */
+    }
   }
 
   async function toggleMic() {
@@ -436,6 +631,7 @@ export default function Chat() {
                       m.role === "assistant" &&
                       m.id === messages[messages.length - 1].id
                     }
+                    imageLoading={genLoadingId === m.id}
                   />
                 ))}
               </div>
@@ -448,65 +644,121 @@ export default function Chat() {
         <div className="px-4 pb-4 pt-2">
           <div className="mx-auto w-full max-w-3xl">
             <div
-              className="focus-glow flex items-end gap-2 rounded-[26px] p-2 transition"
+              className="focus-glow rounded-[26px] p-2 transition"
               style={{
                 background: "var(--card)",
                 border: "1px solid var(--border-strong)",
                 boxShadow: "var(--shadow)",
               }}
             >
-              <button
-                type="button"
-                onClick={toggleMic}
-                disabled={isStreaming || transcribing}
-                title={recording ? ar.micStop : ar.micStart}
-                aria-label={recording ? ar.micStop : ar.micStart}
-                className={[
-                  "mb-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition",
-                  recording ? "animate-pulse-soft bg-red-500 text-white" : "",
-                  "disabled:cursor-not-allowed disabled:opacity-40",
-                ].join(" ")}
-                style={
-                  recording ? undefined : { color: "var(--text-muted)" }
-                }
-              >
-                {transcribing ? (
-                  <Spinner />
-                ) : recording ? (
-                  <StopIcon />
-                ) : (
-                  <MicIcon />
-                )}
-              </button>
+              {/* Image preview */}
+              {pendingImage && (
+                <div className="px-1 pb-2 pt-1">
+                  <div className="relative inline-block">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={pendingImage}
+                      alt="preview"
+                      className="h-20 w-20 rounded-xl object-cover"
+                      style={{ border: "1px solid var(--border)" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setPendingImage(null)}
+                      aria-label={ar.removeImage}
+                      className="absolute -end-1.5 -top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white"
+                    >
+                      <CloseIcon />
+                    </button>
+                  </div>
+                </div>
+              )}
 
-              <textarea
-                ref={taRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={onKeyDown}
-                placeholder={ar.placeholder}
-                rows={1}
-                dir="rtl"
-                className="max-h-44 flex-1 resize-none bg-transparent px-2 py-3 text-base outline-none"
-                style={{ color: "var(--text)" }}
-              />
+              <div className="flex items-end gap-2">
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={onPickImage}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={isStreaming}
+                  title={ar.attachImage}
+                  aria-label={ar.attachImage}
+                  className="mb-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-40"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  <ImageIcon />
+                </button>
 
-              <button
-                onClick={() => send(input)}
-                disabled={!input.trim() || isStreaming}
-                aria-label={ar.send}
-                className="gold-gradient mb-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-40"
-                style={
-                  !input.trim() || isStreaming
-                    ? {
-                        background: "var(--bg-soft)",
-                        color: "var(--text-faint)",
-                      }
-                    : undefined
-                }
-              >
-                {isStreaming ? <Spinner /> : <SendIcon />}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setGenMode((v) => !v)}
+                  disabled={isStreaming}
+                  title={ar.genImage}
+                  aria-label={ar.genImage}
+                  aria-pressed={genMode}
+                  className="mb-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-40"
+                  style={
+                    genMode
+                      ? { background: "var(--accent-2)", color: "var(--accent-ink)" }
+                      : { color: "var(--text-muted)" }
+                  }
+                >
+                  <WandIcon />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={toggleMic}
+                  disabled={isStreaming || transcribing}
+                  title={recording ? ar.micStop : ar.micStart}
+                  aria-label={recording ? ar.micStop : ar.micStart}
+                  className={[
+                    "mb-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition",
+                    recording ? "animate-pulse-soft bg-red-500 text-white" : "",
+                    "disabled:cursor-not-allowed disabled:opacity-40",
+                  ].join(" ")}
+                  style={recording ? undefined : { color: "var(--text-muted)" }}
+                >
+                  {transcribing ? (
+                    <Spinner />
+                  ) : recording ? (
+                    <StopIcon />
+                  ) : (
+                    <MicIcon />
+                  )}
+                </button>
+
+                <textarea
+                  ref={taRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={onKeyDown}
+                  placeholder={genMode ? ar.genPlaceholder : ar.placeholder}
+                  rows={1}
+                  dir="rtl"
+                  className="max-h-44 flex-1 resize-none bg-transparent px-2 py-3 text-base outline-none"
+                  style={{ color: "var(--text)" }}
+                />
+
+                <button
+                  onClick={() => send(input)}
+                  disabled={(!input.trim() && !pendingImage) || isStreaming}
+                  aria-label={ar.send}
+                  className="gold-gradient mb-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-40"
+                  style={
+                    (!input.trim() && !pendingImage) || isStreaming
+                      ? { background: "var(--bg-soft)", color: "var(--text-faint)" }
+                      : undefined
+                  }
+                >
+                  {isStreaming ? <Spinner /> : <SendIcon />}
+                </button>
+              </div>
             </div>
 
             <p
@@ -664,9 +916,11 @@ function SidebarContent({
 function MessageRow({
   message,
   streaming,
+  imageLoading,
 }: {
   message: ChatMessage;
   streaming: boolean;
+  imageLoading?: boolean;
 }) {
   const isUser = message.role === "user";
   const isError =
@@ -677,14 +931,26 @@ function MessageRow({
       <div className="flex animate-rise-in justify-start gap-3">
         <div className="order-2 max-w-[82%]">
           <div
-            className="whitespace-pre-wrap break-words rounded-2xl rounded-tr-md px-4 py-3 text-[15px] leading-relaxed"
+            className="overflow-hidden rounded-2xl rounded-tr-md"
             style={{
               background: "var(--user-bubble)",
               border: "1px solid var(--user-bubble-border)",
               color: "var(--text)",
             }}
           >
-            {message.content}
+            {message.image && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={message.image}
+                alt=""
+                className="max-h-72 w-full object-cover"
+              />
+            )}
+            {message.content && (
+              <div className="whitespace-pre-wrap break-words px-4 py-3 text-[15px] leading-relaxed">
+                {message.content}
+              </div>
+            )}
           </div>
           <div
             className="mt-1 text-end text-[10px]"
@@ -706,21 +972,33 @@ function MessageRow({
         <BrandAvatar size={32} />
       </div>
       <div className="max-w-[85%]">
-        <div className="premium-card rounded-2xl rounded-tl-md px-4 py-3">
-          <div style={{ color: "var(--text)" }}>
-            <Markdown>{message.content}</Markdown>
-            {streaming && (
-              <span
-                className="ms-1 inline-block h-4 w-[2px] translate-y-0.5 animate-cursor-blink align-middle"
-                style={{ background: "var(--accent-2)" }}
-              />
-            )}
-          </div>
+        <div className="premium-card overflow-hidden rounded-2xl rounded-tl-md">
+          {message.image && <ChatImage src={message.image} />}
+          {!message.image && imageLoading && (
+            <div
+              className="flex items-center justify-center gap-2 px-4 py-12"
+              style={{ color: "var(--text-muted)" }}
+            >
+              <Spinner />
+              <span className="text-sm">{ar.generatingImage}</span>
+            </div>
+          )}
+          {(message.content || streaming) && !imageLoading && (
+            <div className="px-4 py-3" style={{ color: "var(--text)" }}>
+              <Markdown>{message.content}</Markdown>
+              {streaming && (
+                <span
+                  className="ms-1 inline-block h-4 w-[2px] translate-y-0.5 animate-cursor-blink align-middle"
+                  style={{ background: "var(--accent-2)" }}
+                />
+              )}
+            </div>
+          )}
         </div>
-        {!streaming && message.content && !isError && (
+        {!streaming && (message.content || message.image) && !isError && (
           <div className="mt-1.5 flex items-center gap-1 px-1">
-            <PlayButton text={message.content} />
-            <MessageActions content={message.content} />
+            {message.content && <PlayButton text={message.content} />}
+            {message.content && <MessageActions content={message.content} />}
             <span
               className="ms-1 text-[10px]"
               style={{ color: "var(--text-faint)" }}
@@ -730,6 +1008,37 @@ function MessageRow({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function ChatImage({ src }: { src: string }) {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+  return (
+    <div className="relative" style={{ background: "var(--bg-soft)" }}>
+      {!loaded && !error && (
+        <div
+          className="flex items-center justify-center gap-2 px-4 py-12"
+          style={{ color: "var(--text-muted)" }}
+        >
+          <Spinner />
+          <span className="text-sm">{ar.generatingImage}</span>
+        </div>
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
+        onLoad={() => setLoaded(true)}
+        onError={() => setError(true)}
+        className={loaded ? "block max-h-96 w-full object-contain" : "hidden"}
+      />
+      {error && (
+        <div className="px-4 py-6 text-sm" style={{ color: "#ef4444" }}>
+          تعذّر توليد الصورة. عاود المحاولة.
+        </div>
+      )}
     </div>
   );
 }
@@ -890,6 +1199,30 @@ function Spinner() {
     <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
       <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  );
+}
+function ImageIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none" />
+      <path d="M21 15l-5-5L5 21" />
+    </svg>
+  );
+}
+function CloseIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
+      <path d="M18 6L6 18M6 6l12 12" />
+    </svg>
+  );
+}
+function WandIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M15 4V2M15 10V8M9.5 8.5L8 7M21 9l-2-2M12.5 6.5L11 5" />
+      <path d="M3 21l11-11M14 7l3 3" />
     </svg>
   );
 }
