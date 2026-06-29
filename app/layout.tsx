@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Cairo, Tajawal } from "next/font/google";
 import "katex/dist/katex.min.css";
 import "./globals.css";
+import { LanguageProvider } from "@/lib/i18n";
 
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
@@ -29,8 +30,8 @@ export const viewport: Viewport = {
 };
 
 // Set the theme before first paint to avoid a flash of the wrong mode.
-// Premium dark theme is the default; only an explicit "light" choice opts out.
-const themeScript = `(function(){try{var t=localStorage.getItem('theme');if(t!=='light'){document.documentElement.classList.add('dark');}}catch(e){document.documentElement.classList.add('dark');}})();`;
+// Set theme + language before first paint to avoid a flash.
+const bootScript = `(function(){try{var t=localStorage.getItem('theme');if(t!=='light'){document.documentElement.classList.add('dark');}var l=localStorage.getItem('lang')||'en';document.documentElement.lang=l;document.documentElement.dir=(l==='ar'?'rtl':'ltr');}catch(e){document.documentElement.classList.add('dark');}})();`;
 
 export default function RootLayout({
   children,
@@ -39,15 +40,17 @@ export default function RootLayout({
 }) {
   return (
     <html
-      lang="ar"
-      dir="rtl"
+      lang="en"
+      dir="ltr"
       suppressHydrationWarning
       className={`${cairo.variable} ${tajawal.variable}`}
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: bootScript }} />
       </head>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        <LanguageProvider>{children}</LanguageProvider>
+      </body>
     </html>
   );
 }

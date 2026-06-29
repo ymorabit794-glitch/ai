@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ar } from "@/lib/strings";
+import { useLang } from "@/lib/i18n";
 
 type VoiceState = "idle" | "loading" | "playing" | "played" | "error";
 
@@ -16,6 +16,7 @@ interface PlayButtonProps {
  * credits are spent only when voice is actually wanted.
  */
 export default function PlayButton({ text, disabled }: PlayButtonProps) {
+  const ar = useLang();
   const [state, setState] = useState<VoiceState>("idle");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlRef = useRef<string | null>(null);

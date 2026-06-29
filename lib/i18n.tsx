@@ -1,0 +1,208 @@
+"use client";
+
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+
+// ───────────────────────────────────────────────────────────────
+//  Bilingual UI strings (English default + Arabic) with a toggle.
+//  The persona's *replies* follow the user's typed language; this
+//  only controls the interface labels and text direction.
+// ───────────────────────────────────────────────────────────────
+
+export const en = {
+  brand: "Chmicha AI",
+  brandLetter: "C",
+  modelName: "Chmicha AI",
+  modelSub: "GPT-4o",
+  online: "Online",
+
+  welcomeTitle: "Hi! I'm Chmicha, your smart assistant.",
+  welcomeSub: "How can I help you today? Ask me anything.",
+  suggestions: [
+    "What do you think about success?",
+    "Give me money advice",
+    "Will AI take my job?",
+    "Why do people waste time?",
+  ],
+
+  themeToggle: "Toggle theme",
+  langToggle: "Language",
+
+  newChat: "New chat",
+  searchPlaceholder: "Search conversations...",
+  historyEmpty: "No conversations yet",
+  searchEmpty: "No results found",
+  deleteChat: "Delete conversation",
+  openMenu: "Conversations",
+  showMore: "Show more",
+  showLess: "Show less",
+  groupToday: "Today",
+  groupWeek: "This week",
+  groupMonth: "Last month",
+  groupOlder: "Older",
+
+  placeholder: "Type your message here...",
+  send: "Send",
+  sending: "Thinking…",
+  attachImage: "Add image",
+  removeImage: "Remove image",
+  imageDefaultPrompt: "What's in this image? Describe it.",
+  genImage: "Generate image",
+  genPlaceholder: "Describe the image you want...",
+  generatingImage: "Generating image…",
+  genError: "Couldn't generate the image. Try again.",
+
+  copy: "Copy",
+  copied: "Copied",
+  like: "Like",
+  dislike: "Dislike",
+
+  playButton: "Play voice",
+  loadingVoice: "Preparing audio…",
+  playingButton: "Playing…",
+  replayButton: "Replay",
+  errorVoice: "Voice failed",
+
+  micStart: "Speak",
+  micStop: "Stop recording",
+  micRecording: "Recording… tap to stop",
+  transcribing: "Transcribing…",
+  micError: "Couldn't record. Check microphone permission.",
+  micEmpty: "Didn't catch that. Speak clearly and louder, closer to the mic.",
+
+  errorGeneric: "Something went wrong. Try again.",
+  errorQuota:
+    "The model is busy with too many requests. Wait a few seconds and try again.",
+
+  footer: "Chmicha can make mistakes. Check important info.",
+};
+
+export const ar: typeof en = {
+  brand: "Chmicha AI",
+  brandLetter: "ش",
+  modelName: "Chmicha AI",
+  modelSub: "GPT-4o",
+  online: "متصل",
+
+  welcomeTitle: "مرحباً! أنا شميشة، مساعدك الذكي.",
+  welcomeSub: "كيف يمكنني مساعدتك اليوم؟ اسألني عن أي شيء.",
+  suggestions: [
+    "شنو رأيك فالنجاح؟",
+    "عطيني نصيحة فالفلوس",
+    "واش الذكاء الاصطناعي غادي ياخد خدمتي؟",
+    "علاش الناس كيخسرو الوقت؟",
+  ],
+
+  themeToggle: "بدّل الثيم",
+  langToggle: "اللغة",
+
+  newChat: "محادثة جديدة",
+  searchPlaceholder: "ابحث في المحادثات...",
+  historyEmpty: "ما كاين حتى محادثة بعد",
+  searchEmpty: "ما لقينا حتى نتيجة",
+  deleteChat: "مسح المحادثة",
+  openMenu: "المحادثات",
+  showMore: "عرض المزيد",
+  showLess: "عرض أقل",
+  groupToday: "اليوم",
+  groupWeek: "هذا الأسبوع",
+  groupMonth: "الشهر الماضي",
+  groupOlder: "أقدم",
+
+  placeholder: "اكتب رسالتك هنا...",
+  send: "إرسال",
+  sending: "كيفكر…",
+  attachImage: "أضف صورة",
+  removeImage: "حذف الصورة",
+  imageDefaultPrompt: "شنو هاد الصورة؟ علّق عليها.",
+  genImage: "توليد صورة",
+  genPlaceholder: "وصف الصورة اللي بغيتي نصاوب...",
+  generatingImage: "كيصاوب الصورة…",
+  genError: "تعذّر توليد الصورة. عاود المحاولة.",
+
+  copy: "نسخ",
+  copied: "تم النسخ",
+  like: "إعجاب",
+  dislike: "عدم إعجاب",
+
+  playButton: "تشغيل الصوت",
+  loadingVoice: "كنحضّر الصوت…",
+  playingButton: "كيهضر…",
+  replayButton: "عاود",
+  errorVoice: "الصوت ما خدامش",
+
+  micStart: "هضر",
+  micStop: "وقف التسجيل",
+  micRecording: "كنسجّل… دوس باش توقف",
+  transcribing: "كنحوّل الصوت…",
+  micError: "ما قدرناش نسجّلو. تأكد من إذن الميكرو.",
+  micEmpty: "ما سمعتش مزيان. عاود هضر بوضوح وبصوت عالي، وقرّب الميكرو.",
+
+  errorGeneric: "شي حاجة طاحت. عاود المحاولة.",
+  errorQuota: "الموديل مشغول دابا بزاف ديال الطلبات. تسنّى شي ثواني وعاود صيفط.",
+
+  footer: "شميشة قد يخطئ. تحقق من المعلومات المهمة.",
+};
+
+export type Lang = "en" | "ar";
+export type Strings = typeof en;
+
+const dict: Record<Lang, Strings> = { en, ar };
+
+interface LangCtx {
+  lang: Lang;
+  t: Strings;
+  setLang: (l: Lang) => void;
+}
+
+const LanguageContext = createContext<LangCtx>({
+  lang: "en",
+  t: en,
+  setLang: () => {},
+});
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [lang, setLangState] = useState<Lang>("en");
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("lang") as Lang | null;
+      if (stored === "ar" || stored === "en") setLangState(stored);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  function setLang(l: Lang) {
+    setLangState(l);
+    try {
+      localStorage.setItem("lang", l);
+    } catch {
+      /* ignore */
+    }
+    document.documentElement.lang = l;
+    document.documentElement.dir = l === "ar" ? "rtl" : "ltr";
+  }
+
+  return (
+    <LanguageContext.Provider value={{ lang, t: dict[lang], setLang }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
+// Returns the strings for the current language.
+export function useLang(): Strings {
+  return useContext(LanguageContext).t;
+}
+
+// Returns { lang, setLang } for the language switcher.
+export function useLangControl() {
+  const { lang, setLang } = useContext(LanguageContext);
+  return { lang, setLang };
+}

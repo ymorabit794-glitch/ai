@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ar } from "@/lib/strings";
+import { useLang, type Strings } from "@/lib/i18n";
 import PlayButton from "./PlayButton";
 import ThemeToggle from "./ThemeToggle";
+import LanguageToggle from "./LanguageToggle";
 import Markdown from "./Markdown";
 import {
   loadConversations,
@@ -102,7 +103,7 @@ interface Group {
   items: Conversation[];
 }
 
-function groupByDate(list: Conversation[]): Group[] {
+function groupByDate(list: Conversation[], labels: Strings): Group[] {
   const now = new Date();
   const startToday = new Date(
     now.getFullYear(),
@@ -125,14 +126,15 @@ function groupByDate(list: Conversation[]): Group[] {
   }
 
   return [
-    { label: ar.groupToday, items: today },
-    { label: ar.groupWeek, items: week },
-    { label: ar.groupMonth, items: month },
-    { label: ar.groupOlder, items: older },
+    { label: labels.groupToday, items: today },
+    { label: labels.groupWeek, items: week },
+    { label: labels.groupMonth, items: month },
+    { label: labels.groupOlder, items: older },
   ].filter((g) => g.items.length > 0);
 }
 
 export default function Chat() {
+  const ar = useLang();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -244,7 +246,7 @@ export default function Chat() {
       if (img) patch({ image: img });
       else patch({ content: "تعذّر توليد الصورة. عاود المحاولة." });
     } catch {
-      patch({ content: "تعذّر توليد الصورة. عاود المحاولة." });
+      patch({ content: ar.genError });
     } finally {
       setGenLoadingId(null);
     }
@@ -502,7 +504,7 @@ export default function Chat() {
 
   const LIMIT = 12;
   const visible = showAll ? filtered : filtered.slice(0, LIMIT);
-  const groups = groupByDate(visible);
+  const groups = groupByDate(visible, ar);
   const hasMore = filtered.length > LIMIT;
 
   const sidebar = (
@@ -611,6 +613,7 @@ export default function Chat() {
                 {ar.modelSub}
               </span>
             </div>
+            <LanguageToggle />
             <ThemeToggle />
           </div>
         </header>
@@ -738,7 +741,7 @@ export default function Chat() {
                   onKeyDown={onKeyDown}
                   placeholder={genMode ? ar.genPlaceholder : ar.placeholder}
                   rows={1}
-                  dir="rtl"
+                  dir="auto"
                   className="max-h-44 flex-1 resize-none bg-transparent px-2 py-3 text-base outline-none"
                   style={{ color: "var(--text)" }}
                 />
@@ -805,6 +808,7 @@ function SidebarContent({
   showAll: boolean;
   onToggleMore: () => void;
 }) {
+  const ar = useLang();
   return (
     <div className="flex h-full flex-col p-3">
       <button
@@ -920,6 +924,7 @@ function MessageRow({
   streaming: boolean;
   imageLoading?: boolean;
 }) {
+  const ar = useLang();
   const isUser = message.role === "user";
   const isError =
     message.content === ar.errorGeneric || message.content === ar.errorQuota;
@@ -1011,6 +1016,7 @@ function MessageRow({
 }
 
 function ChatImage({ src }: { src: string }) {
+  const ar = useLang();
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
   return (
@@ -1034,7 +1040,7 @@ function ChatImage({ src }: { src: string }) {
       />
       {error && (
         <div className="px-4 py-6 text-sm" style={{ color: "#ef4444" }}>
-          تعذّر توليد الصورة. عاود المحاولة.
+          {ar.genError}
         </div>
       )}
     </div>
@@ -1042,6 +1048,7 @@ function ChatImage({ src }: { src: string }) {
 }
 
 function MessageActions({ content }: { content: string }) {
+  const ar = useLang();
   const [copied, setCopied] = useState(false);
   const [reaction, setReaction] = useState<"like" | "dislike" | null>(null);
 
@@ -1108,6 +1115,7 @@ function IconBtn({
 /* ───────────────────────────── Avatars ───────────────────────────── */
 
 function BrandAvatar({ size = 36 }: { size?: number }) {
+  const ar = useLang();
   return (
     <div
       className="gold-gradient flex items-center justify-center rounded-full font-display font-extrabold"

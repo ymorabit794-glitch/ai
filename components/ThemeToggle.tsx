@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ar } from "@/lib/strings";
+import { useLang } from "@/lib/i18n";
 
 export default function ThemeToggle() {
+  const ar = useLang();
   const [dark, setDark] = useState(false);
 
   useEffect(() => {
