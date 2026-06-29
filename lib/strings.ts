@@ -3,14 +3,14 @@
 // ───────────────────────────────────────────────────────────────
 
 export const ar = {
-  brand: "إياس AI",
-  brandLetter: "إ",
-  modelName: "Ilyas AI",
+  brand: "شميشة AI",
+  brandLetter: "ش",
+  modelName: "Chmicha AI",
   modelSub: "GPT-4o",
   online: "متصل",
 
   // Welcome card
-  welcomeTitle: "مرحباً! أنا إياس، مساعدك الذكي.",
+  welcomeTitle: "مرحباً! أنا شميشة، مساعدك الذكي.",
   welcomeSub: "كيف يمكنني مساعدتك اليوم؟ اسألني عن أي شيء.",
 
   // Suggestion chips
@@ -75,7 +75,7 @@ export const ar = {
   errorQuota: "الموديل مشغول دابا بزاف ديال الطلبات. تسنّى شي ثواني وعاود صيفط.",
 
   // Footer / disclaimer
-  footer: "إياس قد يخطئ. تحقق من المعلومات المهمة.",
+  footer: "شميشة قد يخطئ. تحقق من المعلومات المهمة.",
 } as const;
 
 export type ArStrings = typeof ar;

@@ -1109,21 +1109,19 @@ function IconBtn({
 
 function WelcomeCard({ onPick }: { onPick: (t: string) => void }) {
   return (
-    <div className="flex flex-col items-center px-2 py-10 text-center">
-      <div className="premium-card gold-glow flex w-full max-w-xl flex-col items-center rounded-3xl px-6 py-10">
-        <BrandAvatar size={64} />
-        <h2
-          className="mt-5 font-display text-2xl font-extrabold"
-          style={{ color: "var(--text)" }}
-        >
-          {ar.welcomeTitle}
-        </h2>
-        <p className="mt-2 max-w-md text-sm" style={{ color: "var(--text-muted)" }}>
-          {ar.welcomeSub}
-        </p>
-      </div>
+    <div className="flex flex-col items-center px-2 py-16 text-center">
+      <BrandAvatar size={56} />
+      <h2
+        className="mt-5 font-display text-2xl font-extrabold"
+        style={{ color: "var(--text)" }}
+      >
+        {ar.welcomeTitle}
+      </h2>
+      <p className="mt-2 max-w-md text-sm" style={{ color: "var(--text-muted)" }}>
+        {ar.welcomeSub}
+      </p>
 
-      <div className="mt-6 grid w-full max-w-xl grid-cols-1 gap-2.5 sm:grid-cols-2">
+      <div className="mt-8 grid w-full max-w-xl grid-cols-1 gap-2.5 sm:grid-cols-2">
         {ar.suggestions.map((s) => (
           <button
             key={s}
