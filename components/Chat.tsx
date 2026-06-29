@@ -148,6 +148,7 @@ export default function Chat() {
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [genMode, setGenMode] = useState(false);
   const [genLoadingId, setGenLoadingId] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
@@ -675,7 +676,31 @@ export default function Chat() {
                 </div>
               )}
 
-              <div className="flex items-end gap-2">
+              {/* Active image-generation mode chip */}
+              {genMode && (
+                <div className="px-1 pb-2">
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
+                    style={{
+                      background: "var(--accent-2)",
+                      color: "var(--accent-ink)",
+                    }}
+                  >
+                    <WandIcon />
+                    {ar.genImage}
+                    <button
+                      type="button"
+                      onClick={() => setGenMode(false)}
+                      aria-label={ar.removeImage}
+                      className="ms-0.5 inline-flex"
+                    >
+                      <CloseIcon />
+                    </button>
+                  </span>
+                </div>
+              )}
+
+              <div className="flex items-end gap-1.5">
                 <input
                   ref={fileRef}
                   type="file"
@@ -683,34 +708,60 @@ export default function Chat() {
                   onChange={onPickImage}
                   className="hidden"
                 />
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  disabled={isStreaming}
-                  title={ar.attachImage}
-                  aria-label={ar.attachImage}
-                  className="mb-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-40"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  <ImageIcon />
-                </button>
 
-                <button
-                  type="button"
-                  onClick={() => setGenMode((v) => !v)}
-                  disabled={isStreaming}
-                  title={ar.genImage}
-                  aria-label={ar.genImage}
-                  aria-pressed={genMode}
-                  className="mb-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-40"
-                  style={
-                    genMode
-                      ? { background: "var(--accent-2)", color: "var(--accent-ink)" }
-                      : { color: "var(--text-muted)" }
-                  }
-                >
-                  <WandIcon />
-                </button>
+                {/* "+" menu (add image / generate image) */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setMenuOpen((v) => !v)}
+                    disabled={isStreaming}
+                    aria-label={ar.addLabel}
+                    aria-expanded={menuOpen}
+                    className="mb-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-40"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    <PlusBig />
+                  </button>
+                  {menuOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-30"
+                        onClick={() => setMenuOpen(false)}
+                      />
+                      <div
+                        className="absolute bottom-full z-40 mb-2 start-0 w-48 overflow-hidden rounded-2xl py-1"
+                        style={{
+                          background: "var(--card)",
+                          border: "1px solid var(--border-strong)",
+                          boxShadow: "var(--shadow)",
+                        }}
+                      >
+                        <button
+                          type="button"
+                          className="menu-item"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            fileRef.current?.click();
+                          }}
+                        >
+                          <ImageIcon />
+                          {ar.attachImage}
+                        </button>
+                        <button
+                          type="button"
+                          className="menu-item"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            setGenMode((v) => !v);
+                          }}
+                        >
+                          <WandIcon />
+                          {ar.genImage}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
 
                 <button
                   type="button"
@@ -1211,6 +1262,13 @@ function MenuIcon() {
 function PlusIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+function PlusBig() {
+  return (
+    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
       <path d="M12 5v14M5 12h14" />
     </svg>
   );

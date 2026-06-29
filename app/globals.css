@@ -117,6 +117,21 @@ html.dark body {
   opacity: 0.85;
 }
 
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 14px;
+  font-size: 14px;
+  color: var(--text);
+  text-align: start;
+  transition: background-color 0.15s ease;
+}
+.menu-item:hover {
+  background: var(--bg-soft);
+}
+
 /* ── Scrollbar ──────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 9px;
