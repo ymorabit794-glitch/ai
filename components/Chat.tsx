@@ -742,7 +742,7 @@ export default function Chat() {
                   placeholder={genMode ? ar.genPlaceholder : ar.placeholder}
                   rows={1}
                   dir="auto"
-                  className="max-h-44 flex-1 resize-none bg-transparent px-2 py-3 text-base outline-none"
+                  className="max-h-44 min-w-0 flex-1 resize-none bg-transparent px-2 py-3 text-base outline-none"
                   style={{ color: "var(--text)" }}
                 />
 
@@ -1115,13 +1115,17 @@ function IconBtn({
 /* ───────────────────────────── Avatars ───────────────────────────── */
 
 function BrandAvatar({ size = 36 }: { size?: number }) {
-  const ar = useLang();
   return (
     <div
-      className="gold-gradient flex items-center justify-center rounded-full font-display font-extrabold"
-      style={{ width: size, height: size, fontSize: size * 0.46 }}
+      className="overflow-hidden rounded-full"
+      style={{ width: size, height: size }}
     >
-      {ar.brandLetter}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/logo.webp"
+        alt="Chmicha AI"
+        className="h-full w-full object-cover"
+      />
     </div>
   );
 }

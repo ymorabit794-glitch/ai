@@ -46,14 +46,14 @@ export const en = {
   groupMonth: "Last month",
   groupOlder: "Older",
 
-  placeholder: "Type your message here...",
+  placeholder: "Ask anything…",
   send: "Send",
   sending: "Thinking…",
   attachImage: "Add image",
   removeImage: "Remove image",
   imageDefaultPrompt: "What's in this image? Describe it.",
   genImage: "Generate image",
-  genPlaceholder: "Describe the image you want...",
+  genPlaceholder: "Describe an image…",
   generatingImage: "Generating image…",
   genError: "Couldn't generate the image. Try again.",
 
@@ -114,14 +114,14 @@ export const ar: typeof en = {
   groupMonth: "الشهر الماضي",
   groupOlder: "أقدم",
 
-  placeholder: "اكتب رسالتك هنا...",
+  placeholder: "اكتب رسالتك…",
   send: "إرسال",
   sending: "كيفكر…",
   attachImage: "أضف صورة",
   removeImage: "حذف الصورة",
   imageDefaultPrompt: "شنو هاد الصورة؟ علّق عليها.",
   genImage: "توليد صورة",
-  genPlaceholder: "وصف الصورة اللي بغيتي نصاوب...",
+  genPlaceholder: "وصف الصورة…",
   generatingImage: "كيصاوب الصورة…",
   genError: "تعذّر توليد الصورة. عاود المحاولة.",
 
