@@ -498,102 +498,25 @@ export default function Chat() {
 
   const empty = messages.length === 0;
 
-  const filtered = useMemo(() => {
-    const q = search.trim();
-    return q ? conversations.filter((c) => c.title.includes(q)) : conversations;
-  }, [conversations, search]);
-
-  const LIMIT = 12;
-  const visible = showAll ? filtered : filtered.slice(0, LIMIT);
-  const groups = groupByDate(visible, ar);
-  const hasMore = filtered.length > LIMIT;
-
-  const sidebar = (
-    <SidebarContent
-      groups={groups}
-      activeId={activeId}
-      search={search}
-      onSearch={setSearch}
-      onNew={newChat}
-      onSelect={selectConversation}
-      onDelete={deleteConversation}
-      isEmpty={conversations.length === 0}
-      noResults={filtered.length === 0 && conversations.length > 0}
-      hasMore={hasMore}
-      showAll={showAll}
-      onToggleMore={() => setShowAll((v) => !v)}
-    />
-  );
-
   return (
-    <div className="flex h-dvh w-full overflow-hidden">
-      {/* Sidebar — desktop (right side in RTL) */}
-      <aside
-        className="hidden w-72 shrink-0 flex-col md:flex"
-        style={{
-          background: "var(--panel)",
-          borderInlineEnd: "1px solid var(--border)",
-        }}
-      >
-        {sidebar}
-      </aside>
-
-      {/* Sidebar — mobile overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setSidebarOpen(false)}
-          />
-          <div
-            className="absolute inset-y-0 end-0 flex w-80 max-w-[85%] flex-col"
-            style={{ background: "var(--panel)" }}
-          >
-            {sidebar}
-          </div>
-        </div>
-      )}
-
-      {/* Main */}
-      <div className="flex min-w-0 flex-1 flex-col">
+    <div className="flex h-dvh w-full flex-col">
         {/* Top bar */}
         <header
           className="glass sticky top-0 z-20 flex items-center justify-between gap-3 px-4 py-3"
           style={{ borderBottom: "1px solid var(--border)" }}
         >
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setSidebarOpen(true)}
-              aria-label={ar.openMenu}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl md:hidden"
-              style={{ color: "var(--text-muted)" }}
-            >
-              <MenuIcon />
-            </button>
-            <BrandAvatar size={38} />
-          </div>
+          <button
+            type="button"
+            onClick={newChat}
+            aria-label={ar.newChat}
+            title={ar.newChat}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl transition hover:bg-black/5 dark:hover:bg-white/5"
+            style={{ color: "var(--text-muted)" }}
+          >
+            <NewChatIcon />
+          </button>
 
           <div className="flex items-center gap-2">
-            <div
-              className="hidden items-center gap-2 rounded-full px-3 py-1.5 sm:flex"
-              style={{
-                background: "var(--bg-soft)",
-                border: "1px solid var(--border)",
-              }}
-            >
-              <SparkIcon />
-              <span
-                className="text-xs font-semibold"
-                style={{ color: "var(--text)" }}
-              >
-                {ar.modelName}
-              </span>
-              <span style={{ color: "var(--text-faint)" }}>·</span>
-              <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                {ar.modelSub}
-              </span>
-            </div>
             <LanguageToggle />
             <ThemeToggle />
           </div>
@@ -601,8 +524,19 @@ export default function Chat() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-3xl px-4 py-6">
-            {!empty && (
+          {empty ? (
+            <div className="flex h-full items-center justify-center px-4">
+              <div className="logo-hero">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/logo.webp"
+                  alt="Chmicha AI"
+                  className="relative block h-28 w-28 rounded-full"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="mx-auto w-full max-w-3xl px-4 py-6">
               <div className="space-y-6">
                 {messages.map((m) => (
                   <MessageRow
@@ -617,9 +551,9 @@ export default function Chat() {
                   />
                 ))}
               </div>
-            )}
-            <div ref={bottomRef} />
-          </div>
+              <div ref={bottomRef} />
+            </div>
+          )}
         </div>
 
         {/* Composer */}
@@ -807,7 +741,6 @@ export default function Chat() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 
@@ -1250,6 +1183,14 @@ function PlusBig() {
   return (
     <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
       <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+function NewChatIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" />
     </svg>
   );
 }
