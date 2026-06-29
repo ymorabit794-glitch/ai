@@ -572,26 +572,6 @@ export default function Chat() {
               <MenuIcon />
             </button>
             <BrandAvatar size={38} />
-            <div className="leading-tight">
-              <h1
-                className="font-display text-[17px] font-extrabold"
-                style={{ color: "var(--text)" }}
-              >
-                {ar.brand}
-              </h1>
-              <div className="flex items-center gap-1.5">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                </span>
-                <span
-                  className="text-[11px]"
-                  style={{ color: "var(--text-faint)" }}
-                >
-                  {ar.online}
-                </span>
-              </div>
-            </div>
           </div>
 
           <div className="flex items-center gap-2">
