@@ -498,28 +498,65 @@ export default function Chat() {
 
   const empty = messages.length === 0;
 
+  const filtered = useMemo(() => {
+    const q = search.trim();
+    return q ? conversations.filter((c) => c.title.includes(q)) : conversations;
+  }, [conversations, search]);
+  const LIMIT = 12;
+  const visible = showAll ? filtered : filtered.slice(0, LIMIT);
+  const groups = groupByDate(visible, ar);
+  const hasMore = filtered.length > LIMIT;
+
+  const sidebar = (
+    <SidebarContent
+      groups={groups}
+      activeId={activeId}
+      search={search}
+      onSearch={setSearch}
+      onNew={newChat}
+      onSelect={selectConversation}
+      onDelete={deleteConversation}
+      isEmpty={conversations.length === 0}
+      noResults={filtered.length === 0 && conversations.length > 0}
+      hasMore={hasMore}
+      showAll={showAll}
+      onToggleMore={() => setShowAll((v) => !v)}
+    />
+  );
+
   return (
     <div className="flex h-dvh w-full flex-col">
+        {/* Menu drawer */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-50">
+            <div
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <div
+              className="absolute inset-y-0 start-0 flex w-80 max-w-[85%] flex-col"
+              style={{ background: "var(--panel)" }}
+            >
+              {sidebar}
+            </div>
+          </div>
+        )}
+
         {/* Top bar */}
         <header
-          className="glass sticky top-0 z-20 flex items-center justify-between gap-3 px-4 py-3"
+          className="glass sticky top-0 z-20 flex items-center gap-3 px-4 py-3"
           style={{ borderBottom: "1px solid var(--border)" }}
         >
           <button
             type="button"
-            onClick={newChat}
-            aria-label={ar.newChat}
-            title={ar.newChat}
+            onClick={() => setSidebarOpen(true)}
+            aria-label={ar.openMenu}
+            title={ar.openMenu}
             className="inline-flex h-9 w-9 items-center justify-center rounded-xl transition hover:bg-black/5 dark:hover:bg-white/5"
             style={{ color: "var(--text-muted)" }}
           >
-            <NewChatIcon />
+            <MenuIcon />
           </button>
-
-          <div className="flex items-center gap-2">
-            <LanguageToggle />
-            <ThemeToggle />
-          </div>
         </header>
 
         {/* Messages */}
@@ -873,6 +910,15 @@ function SidebarContent({
             {showAll ? ar.showLess : ar.showMore}
           </button>
         )}
+      </div>
+
+      {/* Language + dark mode */}
+      <div
+        className="mt-2 flex items-center justify-center gap-2 border-t pt-3"
+        style={{ borderColor: "var(--border)" }}
+      >
+        <LanguageToggle />
+        <ThemeToggle />
       </div>
     </div>
   );
