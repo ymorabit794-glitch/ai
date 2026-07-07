@@ -765,16 +765,14 @@ export default function Chat() {
               </div>
             </div>
 
-            <p
-              className="mt-2.5 text-center text-[11px]"
-              style={{ color: "var(--text-faint)" }}
-            >
-              {recording
-                ? ar.micRecording
-                : transcribing
-                  ? ar.transcribing
-                  : ar.footer}
-            </p>
+            {(recording || transcribing) && (
+              <p
+                className="mt-2.5 text-center text-[11px]"
+                style={{ color: "var(--text-faint)" }}
+              >
+                {recording ? ar.micRecording : ar.transcribing}
+              </p>
+            )}
           </div>
         </div>
       </div>
