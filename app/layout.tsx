@@ -3,6 +3,7 @@ import { Cairo, Tajawal } from "next/font/google";
 import "katex/dist/katex.min.css";
 import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n";
+import PWARegister from "@/components/PWARegister";
 
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
@@ -59,6 +60,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: bootScript }} />
       </head>
       <body className="font-sans antialiased">
+        <PWARegister />
         <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>
