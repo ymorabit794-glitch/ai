@@ -20,6 +20,16 @@ const tajawal = Tajawal({
 export const metadata: Metadata = {
   title: "Chmicha AI",
   description: "المساعد الذكي بأسلوب مغربي بلا فلتر.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Chmicha",
+  },
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/apple-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
