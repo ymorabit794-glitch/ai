@@ -58,6 +58,8 @@ export async function* streamGroqText({
     }
   }
 
+  const isCompound = model.includes("compound");
+
   const body: Record<string, unknown> = {
     model,
     messages,
@@ -65,7 +67,8 @@ export async function* streamGroqText({
     temperature: 0.8,
     top_p: 0.9,
     // gpt-oss spends tokens on hidden reasoning, so give headroom.
-    max_tokens: 2048,
+    // compound has a tight free-tier TPM — keep its requests small.
+    max_tokens: isCompound ? 1024 : 2048,
     stream: true,
   };
 
@@ -77,8 +80,10 @@ export async function* streamGroqText({
 
   // Free-tier TPM limits return 429 (with a short retry window) or 503.
   // Retry a few times with backoff so transient limits don't surface.
+  // compound gets no retries: fail fast so the caller can fall back to
+  // the regular model immediately.
   let res: Response | null = null;
-  const maxAttempts = 3;
+  const maxAttempts = isCompound ? 1 : 3;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
