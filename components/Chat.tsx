@@ -5,6 +5,7 @@ import { useLang, type Strings } from "@/lib/i18n";
 import PlayButton from "./PlayButton";
 import ThemeToggle from "./ThemeToggle";
 import LanguageToggle from "./LanguageToggle";
+import LampGate from "./LampGate";
 import Markdown from "./Markdown";
 import {
   loadConversations,
@@ -526,6 +527,8 @@ export default function Chat() {
 
   return (
     <div className="flex h-dvh w-full flex-col">
+        <LampGate />
+
         {/* Menu drawer */}
         {sidebarOpen && (
           <div className="fixed inset-0 z-50">

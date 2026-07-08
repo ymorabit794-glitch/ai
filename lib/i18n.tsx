@@ -81,6 +81,14 @@ export const en = {
     "The model is busy with too many requests. Wait a few seconds and try again.",
 
   footer: "Chmicha can make mistakes. Check important info.",
+
+  // Magic lamp gate
+  lampRub: "Rub the lamp to light it",
+  lampLit: "The lamp is lit!",
+  signInTitle: "Sign in",
+  signInSub: "What should Chmicha call you?",
+  namePlaceholder: "Your name…",
+  signInBtn: "Enter",
 };
 
 export const ar: typeof en = {
@@ -149,6 +157,14 @@ export const ar: typeof en = {
   errorQuota: "الموديل مشغول دابا بزاف ديال الطلبات. تسنّى شي ثواني وعاود صيفط.",
 
   footer: "شميشة قد يخطئ. تحقق من المعلومات المهمة.",
+
+  // Magic lamp gate
+  lampRub: "افرك المصباح باش يشعل",
+  lampLit: "المصباح شعل!",
+  signInTitle: "تسجيل الدخول",
+  signInSub: "شنو سميتك باش يناديك شميشة؟",
+  namePlaceholder: "سميتك…",
+  signInBtn: "دخول",
 };
 
 export type Lang = "en" | "ar";

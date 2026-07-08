@@ -217,6 +217,65 @@ html.dark body {
   }
 }
 
+/* ── Magic lamp gate ────────────────────────────────────────── */
+.lamp-shake-slow {
+  animation: lamp-idle 2.8s ease-in-out infinite;
+}
+@keyframes lamp-idle {
+  0%,
+  100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  25% {
+    transform: rotate(-1.5deg) translateY(-3px);
+  }
+  75% {
+    transform: rotate(1.5deg) translateY(-1px);
+  }
+}
+@keyframes flame-dance {
+  0%,
+  100% {
+    transform: scale(1) rotate(-2deg);
+  }
+  50% {
+    transform: scale(1.15) rotate(2deg);
+  }
+}
+.lamp-sparks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.lamp-sparks span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffd75e;
+  box-shadow: 0 0 8px rgba(245, 197, 66, 0.9);
+  opacity: 0;
+  transform: rotate(calc(var(--i) * 36deg)) translateY(-46px) scale(0);
+  animation: spark-fly 1.4s ease-out infinite;
+  animation-delay: calc(var(--i) * 0.14s);
+}
+@keyframes spark-fly {
+  0% {
+    opacity: 0;
+    transform: rotate(calc(var(--i) * 36deg)) translateY(-40px) scale(0);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(calc(var(--i) * 36deg)) translateY(-110px) scale(1.2);
+  }
+}
+
 /* ── Scrollbar ──────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 9px;
