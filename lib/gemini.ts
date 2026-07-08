@@ -74,7 +74,10 @@ export async function* streamGeminiText({
 
     if (res.ok && res.body) break;
 
-    const transient = res.status === 503 || res.status === 429;
+    // 429 = daily/minute quota exhausted — it won't recover in seconds,
+    // so fail fast (lets the hybrid provider fall back to Groq at once).
+    // Only 503 (temporary overload) is worth retrying.
+    const transient = res.status === 503;
     if (!transient || attempt === maxAttempts) {
       const detail = await res.text().catch(() => "");
       throw new Error(`Gemini request failed (${res.status}): ${detail}`);

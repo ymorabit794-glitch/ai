@@ -71,28 +71,31 @@ export async function* streamLLM(params: StreamParams): AsyncGenerator<string> {
 
   const provider = (process.env.LLM_PROVIDER || "groq").toLowerCase();
 
+  // Fresh-info questions get free web-search results injected into the
+  // system context before any model answers (all providers).
+  const enriched = await withFreshContext(params);
+
   if (provider === "groq") {
-    // Fresh-info questions get free web-search results injected into
-    // the system context before the model answers.
-    yield* streamGroqText(await withFreshContext(params));
+    yield* streamGroqText(enriched);
     return;
   }
 
   if (provider === "gemini") {
-    yield* streamGeminiText(params);
+    yield* streamGeminiText(enriched);
     return;
   }
 
-  // hybrid: try Gemini; if it fails BEFORE emitting anything, use Groq.
+  // hybrid: try Gemini (smartest free option); if it fails BEFORE
+  // emitting anything (quota/503), fall back to Groq silently.
   // (Once tokens have streamed we can't safely restart mid-message.)
   let emitted = false;
   try {
-    for await (const chunk of streamGeminiText(params)) {
+    for await (const chunk of streamGeminiText(enriched)) {
       emitted = true;
       yield chunk;
     }
   } catch (err) {
     if (emitted) throw err;
-    yield* streamGroqText(params);
+    yield* streamGroqText(enriched);
   }
 }
