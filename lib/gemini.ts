@@ -14,6 +14,7 @@ export interface ChatTurn {
 export interface GeminiStreamParams {
   history: ChatTurn[];
   systemPrompt: string;
+  image?: string; // data URL attached to the latest user turn (vision)
 }
 
 /**
@@ -23,6 +24,7 @@ export interface GeminiStreamParams {
 export async function* streamGeminiText({
   history,
   systemPrompt,
+  image,
 }: GeminiStreamParams): AsyncGenerator<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -36,8 +38,22 @@ export async function* streamGeminiText({
 
   const contents = history.map((turn) => ({
     role: turn.role,
-    parts: [{ text: turn.text }],
+    parts: [{ text: turn.text }] as Array<
+      { text: string } | { inlineData: { mimeType: string; data: string } }
+    >,
   }));
+
+  // Attach the image to the last user turn (Gemini Flash is multimodal).
+  // Data URL format: data:<mime>;base64,<data>
+  if (image && contents.length) {
+    const m = /^data:([^;]+);base64,(.+)$/s.exec(image);
+    if (m) {
+      const last = contents[contents.length - 1];
+      if (last.role === "user") {
+        last.parts.push({ inlineData: { mimeType: m[1], data: m[2] } });
+      }
+    }
+  }
 
   const body = {
     systemInstruction: { parts: [{ text: systemPrompt }] },

@@ -84,8 +84,16 @@ async function withFreshContext(params: StreamParams): Promise<StreamParams> {
 }
 
 export async function* streamLLM(params: StreamParams): AsyncGenerator<string> {
-  // Images need a multimodal model — always use Groq vision regardless of
-  // the configured text provider.
+  const provider = (process.env.LLM_PROVIDER || "groq").toLowerCase();
+
+  // Pure Gemini Flash: everything (text + images) goes through Gemini,
+  // with no web search and no fallback. One model, nothing else.
+  if (provider === "gemini") {
+    yield* streamGeminiText(params);
+    return;
+  }
+
+  // Images need a multimodal model — use Groq vision for non-Gemini modes.
   if (params.image) {
     yield* streamGroqText({
       history: params.history,
@@ -96,19 +104,12 @@ export async function* streamLLM(params: StreamParams): AsyncGenerator<string> {
     return;
   }
 
-  const provider = (process.env.LLM_PROVIDER || "groq").toLowerCase();
-
   // Fresh-info questions get free web-search results injected into the
-  // system context before any model answers (all providers).
+  // system context before the model answers (groq / hybrid).
   const enriched = await withFreshContext(params);
 
   if (provider === "groq") {
     yield* streamGroqText(enriched);
-    return;
-  }
-
-  if (provider === "gemini") {
-    yield* streamGeminiText(enriched);
     return;
   }
 
