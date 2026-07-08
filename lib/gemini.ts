@@ -21,20 +21,28 @@ export interface GeminiStreamParams {
  * Streams the model's reply token-by-token, given the whole chat
  * history (so the judge remembers what was said earlier).
  */
+// All configured API keys (different Google accounts = separate free
+// quotas). When one key's quota is exhausted (429), the next key takes
+// over automatically.
+function getApiKeys(): string[] {
+  return [
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_2,
+    process.env.GEMINI_API_KEY_3,
+  ].filter((k): k is string => !!k && k.trim().length > 0);
+}
+
 export async function* streamGeminiText({
   history,
   systemPrompt,
   image,
 }: GeminiStreamParams): AsyncGenerator<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  const apiKeys = getApiKeys();
+  if (apiKeys.length === 0) {
     throw new Error("GEMINI_API_KEY is not set. Add it to .env.local");
   }
 
   const model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
-  const url =
-    `https://generativelanguage.googleapis.com/v1beta/models/` +
-    `${model}:streamGenerateContent?alt=sse&key=${apiKey}`;
 
   const contents = history.map((turn) => ({
     role: turn.role,
@@ -77,33 +85,51 @@ export async function* streamGeminiText({
     ],
   };
 
-  // Free-tier models occasionally return 503 (high demand) or a
-  // transient 429. Retry a few times with backoff before giving up.
+  // Try each API key in order. 429 (quota exhausted) on one key →
+  // switch to the next key automatically. 503 (temporary overload) is
+  // retried on the same key with backoff.
   let res: Response | null = null;
-  const maxAttempts = 3;
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+  let lastError = "";
+  keyLoop: for (let k = 0; k < apiKeys.length; k++) {
+    const url =
+      `https://generativelanguage.googleapis.com/v1beta/models/` +
+      `${model}:streamGenerateContent?alt=sse&key=${apiKeys[k]}`;
 
-    if (res.ok && res.body) break;
+    const maxAttempts = 3;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
 
-    // 429 = daily/minute quota exhausted — it won't recover in seconds,
-    // so fail fast (lets the hybrid provider fall back to Groq at once).
-    // Only 503 (temporary overload) is worth retrying.
-    const transient = res.status === 503;
-    if (!transient || attempt === maxAttempts) {
-      const detail = await res.text().catch(() => "");
-      throw new Error(`Gemini request failed (${res.status}): ${detail}`);
+      if (res.ok && res.body) {
+        if (k > 0) console.log(`[gemini] using API key #${k + 1}`);
+        break keyLoop;
+      }
+
+      // 429 = quota exhausted; 400/403 = invalid or blocked key.
+      // Either way this key is useless right now — try the next one.
+      if (res.status === 429 || res.status === 400 || res.status === 403) {
+        lastError = `key #${k + 1} failed (${res.status})`;
+        console.log(`[gemini] ${lastError} — trying next key`);
+        continue keyLoop;
+      }
+
+      const transient = res.status === 503;
+      if (!transient || attempt === maxAttempts) {
+        const detail = await res.text().catch(() => "");
+        throw new Error(`Gemini request failed (${res.status}): ${detail}`);
+      }
+      // backoff: 0.8s, 1.6s
+      await new Promise((r) => setTimeout(r, attempt * 800));
     }
-    // backoff: 0.8s, 1.6s, 2.4s
-    await new Promise((r) => setTimeout(r, attempt * 800));
   }
 
   if (!res || !res.ok || !res.body) {
-    throw new Error("Gemini request failed: no response");
+    throw new Error(
+      `Gemini request failed: all API keys exhausted (${lastError || "no response"})`
+    );
   }
 
   const reader = res.body.getReader();
