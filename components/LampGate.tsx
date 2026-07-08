@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { useLang } from "@/lib/i18n";
 
 // Magic-lamp entry gate: rub the lamp (mouse hover-move on desktop,
-// finger drag on mobile) until it lights, then a sign-in card appears.
-// The profile is stored locally; returning visitors skip the gate.
+// finger drag on mobile) until it lights. The lamp shows on EVERY
+// visit; the sign-in card only appears the first time (no profile yet).
+// Returning visitors enter automatically once the lamp is lit.
 
 const PROFILE_KEY = "chmicha.profile.v1";
 const RUB_DISTANCE = 700; // px of pointer movement needed to light it
@@ -19,20 +20,27 @@ export default function LampGate() {
   const [name, setName] = useState("");
   const lastPos = useRef<{ x: number; y: number } | null>(null);
   const litRef = useRef(false);
+  const hasProfile = useRef(false);
 
   useEffect(() => {
     try {
-      if (!localStorage.getItem(PROFILE_KEY)) setShow(true);
+      hasProfile.current = !!localStorage.getItem(PROFILE_KEY);
     } catch {
-      setShow(true);
+      hasProfile.current = false;
     }
+    setShow(true); // the lamp greets you on every visit
   }, []);
 
   function light() {
     if (litRef.current) return;
     litRef.current = true;
     setLit(true);
-    setTimeout(() => setFormVisible(true), 1000);
+    if (hasProfile.current) {
+      // Already signed in: enjoy the flame a moment, then enter.
+      setTimeout(() => setShow(false), 1500);
+    } else {
+      setTimeout(() => setFormVisible(true), 1000);
+    }
   }
 
   function onMove(e: React.PointerEvent) {
@@ -138,8 +146,8 @@ export default function LampGate() {
         </>
       )}
 
-      {/* Sign-in card after lighting */}
-      {lit && (
+      {/* Sign-in card after lighting — first visit only */}
+      {lit && !hasProfile.current && (
         <div
           className={`mt-8 w-full max-w-sm transition-all duration-700 ${
             formVisible
