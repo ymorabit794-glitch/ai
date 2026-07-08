@@ -93,6 +93,8 @@ export async function* streamGeminiText({
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let emittedChars = 0;
+  let finishReason: string | null = null;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -110,10 +112,13 @@ export async function* streamGeminiText({
 
       try {
         const parsed = JSON.parse(json);
-        const parts = parsed?.candidates?.[0]?.content?.parts;
+        const cand = parsed?.candidates?.[0];
+        if (cand?.finishReason) finishReason = cand.finishReason;
+        const parts = cand?.content?.parts;
         if (Array.isArray(parts)) {
           for (const p of parts) {
             if (typeof p?.text === "string" && p.text.length) {
+              emittedChars += p.text.length;
               yield p.text;
             }
           }
@@ -122,5 +127,20 @@ export async function* streamGeminiText({
         buffer = trimmed + "\n" + buffer;
       }
     }
+  }
+
+  // Gemini sometimes aborts the stream mid-answer (RECITATION/SAFETY),
+  // leaving a truncated fragment. If almost nothing was produced, treat
+  // it as a failure so the hybrid provider can fall back to Groq.
+  console.log(
+    `[gemini] finished: reason=${finishReason} chars=${emittedChars}`
+  );
+  // Streams sometimes die silently (no finishReason at all) or get cut
+  // by RECITATION/SAFETY after a few characters. A short answer without
+  // an explicit STOP is a failure — let the hybrid fall back to Groq.
+  if (emittedChars < 150 && finishReason !== "STOP") {
+    throw new Error(
+      `Gemini stream ended early (${finishReason ?? "no finish reason"})`
+    );
   }
 }

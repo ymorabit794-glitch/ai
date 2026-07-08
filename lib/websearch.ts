@@ -57,21 +57,28 @@ async function tavilyRequest(
 
 async function tavilySearch(
   query: string,
-  maxResults: number
+  maxResults: number,
+  preferGeneral: boolean
 ): Promise<SearchHit[]> {
-  // Fresh-info questions are usually news-like; the news index returns
-  // far more relevant hits. Fall back to the general index if empty.
-  const news = await tavilyRequest(query, maxResults, "news");
-  if (news.length > 0) return news;
-  return tavilyRequest(query, maxResults, "general");
+  // News-like questions → news index first (far more relevant hits);
+  // "who is X" questions → general index first. Fall back to the other.
+  const order: ("news" | "general")[] = preferGeneral
+    ? ["general", "news"]
+    : ["news", "general"];
+  for (const topic of order) {
+    const hits = await tavilyRequest(query, maxResults, topic);
+    if (hits.length > 0) return hits;
+  }
+  return [];
 }
 
 export async function webSearch(
   query: string,
-  maxResults = 5
+  maxResults = 5,
+  opts: { preferGeneral?: boolean } = {}
 ): Promise<SearchHit[]> {
   // Prefer Tavily when configured (much more reliable than DDG).
-  const tavily = await tavilySearch(query, maxResults);
+  const tavily = await tavilySearch(query, maxResults, !!opts.preferGeneral);
   if (tavily.length > 0) return tavily;
   return ddgSearch(query, maxResults);
 }
