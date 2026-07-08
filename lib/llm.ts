@@ -86,14 +86,8 @@ async function withFreshContext(params: StreamParams): Promise<StreamParams> {
 export async function* streamLLM(params: StreamParams): AsyncGenerator<string> {
   const provider = (process.env.LLM_PROVIDER || "groq").toLowerCase();
 
-  // Pure Gemini Flash: everything (text + images) goes through Gemini,
-  // with no web search and no fallback. One model, nothing else.
-  if (provider === "gemini") {
-    yield* streamGeminiText(params);
-    return;
-  }
-
-  // Images need a multimodal model — use Groq vision for non-Gemini modes.
+  // Images always go through Groq vision (llama-4-scout) — regardless
+  // of the configured text provider. Gemini never handles images.
   if (params.image) {
     yield* streamGroqText({
       history: params.history,
@@ -101,6 +95,12 @@ export async function* streamLLM(params: StreamParams): AsyncGenerator<string> {
       image: params.image,
       model: VISION_MODEL,
     });
+    return;
+  }
+
+  // Pure Gemini Flash for text: no web search, no fallback.
+  if (provider === "gemini") {
+    yield* streamGeminiText(params);
     return;
   }
 
