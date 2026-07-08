@@ -812,8 +812,146 @@ function SidebarContent({
   onToggleMore: () => void;
 }) {
   const ar = useLang();
+  const [view, setView] = useState<"menu" | "history">("menu");
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [profileName, setProfileName] = useState("");
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("chmicha.profile.v1");
+      if (raw) setProfileName(JSON.parse(raw)?.name || "");
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const initials =
+    profileName
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase() || "🙂";
+
+  /* ── Main menu view (like the design) ── */
+  if (view === "menu") {
+    return (
+      <div className="flex h-full flex-col p-5">
+        {/* Header: brand + search */}
+        <div className="mb-6 flex items-center justify-between">
+          <h2
+            className="font-display text-2xl font-extrabold tracking-tight"
+            style={{ color: "var(--text)" }}
+          >
+            Chmicha <span style={{ color: "var(--accent)" }}>AI</span>
+          </h2>
+          <button
+            onClick={() => setView("history")}
+            aria-label={ar.searchPlaceholder}
+            className="flex h-10 w-10 items-center justify-center rounded-full transition hover:opacity-80"
+            style={{
+              background: "var(--bg-soft)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            <SearchIcon />
+          </button>
+        </div>
+
+        {/* New chat — gold outline pill */}
+        <button
+          onClick={onNew}
+          className="mb-7 flex items-center justify-center gap-2 rounded-full px-4 py-3 text-base font-semibold transition hover:opacity-85"
+          style={{
+            border: "1.5px solid var(--accent)",
+            color: "var(--accent)",
+            background: "transparent",
+          }}
+        >
+          <PlusIcon />
+          {ar.newChat}
+        </button>
+
+        {/* Menu items */}
+        <nav className="flex-1 space-y-1.5">
+          <SideItem icon={<LibraryIcon />} label={ar.menuLibrary} badge={ar.soonBadge} />
+          <SideItem icon={<ProjectsIcon />} label={ar.menuProjects} badge={ar.soonBadge} />
+          <SideItem
+            icon={<HistoryGridIcon />}
+            label={ar.menuHistory}
+            onClick={() => setView("history")}
+          />
+          <SideItem
+            icon={<MoreDotsIcon />}
+            label={ar.menuMore}
+            onClick={() => setMoreOpen((v) => !v)}
+          />
+          {moreOpen && (
+            <div className="flex items-center gap-2 pt-2 ps-12">
+              <LanguageToggle />
+              <ThemeToggle />
+            </div>
+          )}
+        </nav>
+
+        {/* Profile */}
+        <div
+          className="mt-2 flex items-center gap-3 border-t pt-4"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <div
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-extrabold text-white"
+            style={{
+              background: "linear-gradient(135deg, #5fb8a5, #f5b301)",
+            }}
+          >
+            {initials}
+          </div>
+          <span
+            className="flex-1 truncate text-base font-medium"
+            style={{ color: "var(--text-muted)" }}
+          >
+            {profileName || "Chmicha"}
+          </span>
+          <ChevronIcon />
+        </div>
+      </div>
+    );
+  }
+
+  /* ── History view (search + conversation list) ── */
   return (
     <div className="flex h-full flex-col p-3">
+      {/* Back + search */}
+      <div className="mb-3 flex items-center gap-2">
+        <button
+          onClick={() => setView("menu")}
+          aria-label={ar.backLabel}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition hover:opacity-80"
+          style={{
+            background: "var(--bg-soft)",
+            border: "1px solid var(--border)",
+          }}
+        >
+          <BackIcon />
+        </button>
+        <div
+          className="flex flex-1 items-center gap-2 rounded-xl px-3 py-2"
+          style={{ background: "var(--bg-soft)", border: "1px solid var(--border)" }}
+        >
+          <SearchIcon />
+          <input
+            value={search}
+            onChange={(e) => onSearch(e.target.value)}
+            placeholder={ar.searchPlaceholder}
+            autoFocus
+            className="w-full bg-transparent text-sm outline-none"
+            style={{ color: "var(--text)" }}
+          />
+        </div>
+      </div>
+
       <button
         onClick={onNew}
         className="btn-soft mb-3 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium"
@@ -821,21 +959,6 @@ function SidebarContent({
         <PlusIcon />
         {ar.newChat}
       </button>
-
-      {/* Search */}
-      <div
-        className="mb-3 flex items-center gap-2 rounded-xl px-3 py-2"
-        style={{ background: "var(--bg-soft)", border: "1px solid var(--border)" }}
-      >
-        <SearchIcon />
-        <input
-          value={search}
-          onChange={(e) => onSearch(e.target.value)}
-          placeholder={ar.searchPlaceholder}
-          className="w-full bg-transparent text-sm outline-none"
-          style={{ color: "var(--text)" }}
-        />
-      </div>
 
       {/* History */}
       <div className="-mx-1 flex-1 overflow-y-auto px-1">
@@ -913,15 +1036,129 @@ function SidebarContent({
         )}
       </div>
 
-      {/* Language + dark mode */}
-      <div
-        className="mt-2 flex items-center justify-center gap-2 border-t pt-3"
-        style={{ borderColor: "var(--border)" }}
-      >
-        <LanguageToggle />
-        <ThemeToggle />
-      </div>
     </div>
+  );
+}
+
+/* Menu row like the design: teal icon + label (+ optional Soon badge) */
+function SideItem({
+  icon,
+  label,
+  badge,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  badge?: string;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={!onClick}
+      className="flex w-full items-center gap-4 rounded-2xl px-3 py-3 text-start transition enabled:hover:opacity-80 disabled:cursor-default"
+    >
+      <span className="shrink-0" style={{ color: "#5fb8a5" }}>
+        {icon}
+      </span>
+      <span
+        className="flex-1 truncate text-[17px] font-medium"
+        style={{ color: "var(--text)" }}
+      >
+        {label}
+      </span>
+      {badge && (
+        <span
+          className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+          style={{
+            background: "var(--bg-soft)",
+            border: "1px solid var(--border)",
+            color: "var(--text-faint)",
+          }}
+        >
+          {badge}
+        </span>
+      )}
+    </button>
+  );
+}
+
+function LibraryIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M5 5v14" />
+      <path d="M9.5 5v14" />
+      <path d="M14 5v14" />
+      <path d="M18.5 6.5l1.8 12.4" />
+    </svg>
+  );
+}
+
+function ProjectsIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="8" width="16" height="12" rx="2.5" />
+      <path d="M9 8V6.5A2.5 2.5 0 0 1 11.5 4h1A2.5 2.5 0 0 1 15 6.5V8" />
+    </svg>
+  );
+}
+
+function HistoryGridIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+      <rect x="4" y="4" width="7" height="7" rx="1.6" />
+      <rect x="13" y="4" width="7" height="7" rx="1.6" />
+      <rect x="4" y="13" width="7" height="7" rx="1.6" />
+      <rect x="13" y="13" width="7" height="7" rx="1.6" />
+    </svg>
+  );
+}
+
+function MoreDotsIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="5" cy="12" r="2" />
+      <circle cx="12" cy="12" r="2" />
+      <circle cx="19" cy="12" r="2" />
+    </svg>
+  );
+}
+
+function ChevronIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="rtl:rotate-180"
+      style={{ color: "var(--text-faint)" }}
+    >
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+function BackIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="rtl:rotate-180"
+      style={{ color: "var(--text-muted)" }}
+    >
+      <path d="M15 6l-6 6 6 6" />
+    </svg>
   );
 }
 
