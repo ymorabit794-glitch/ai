@@ -23,9 +23,10 @@ export interface SearchHit {
 
 // Tavily (free tier: ~1000 searches/month) — stable, built for LLMs.
 // Used when TAVILY_API_KEY is set; DuckDuckGo lite is the fallback.
-async function tavilySearch(
+async function tavilyRequest(
   query: string,
-  maxResults: number
+  maxResults: number,
+  topic: "news" | "general"
 ): Promise<SearchHit[]> {
   const key = process.env.TAVILY_API_KEY;
   if (!key) return [];
@@ -37,6 +38,7 @@ async function tavilySearch(
         api_key: key,
         query,
         max_results: maxResults,
+        topic,
         search_depth: "basic",
       }),
       signal: AbortSignal.timeout(8000),
@@ -51,6 +53,17 @@ async function tavilySearch(
   } catch {
     return [];
   }
+}
+
+async function tavilySearch(
+  query: string,
+  maxResults: number
+): Promise<SearchHit[]> {
+  // Fresh-info questions are usually news-like; the news index returns
+  // far more relevant hits. Fall back to the general index if empty.
+  const news = await tavilyRequest(query, maxResults, "news");
+  if (news.length > 0) return news;
+  return tavilyRequest(query, maxResults, "general");
 }
 
 export async function webSearch(
