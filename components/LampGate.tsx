@@ -88,12 +88,12 @@ export default function LampGate() {
 
   if (!show) return null;
 
-  /* ── Phase 2: account screen (like the design) ── */
+  /* ── Phase 2: account screen (like the design) — always dark ── */
   if (phase === "account") {
     return (
       <div
         className="fixed inset-0 z-[100] flex flex-col items-center px-6 py-10"
-        style={{ background: "var(--bg)" }}
+        style={{ background: "#0c0c0c" }}
       >
         {/* Hero: logo with golden glow + wordmark */}
         <div className="flex flex-1 flex-col items-center justify-center">
@@ -102,11 +102,11 @@ export default function LampGate() {
               aria-hidden
               style={{
                 position: "absolute",
-                inset: "-55%",
+                inset: "-70% -45%",
                 borderRadius: "50%",
                 background:
-                  "radial-gradient(circle, rgba(245,197,66,0.4), transparent 65%)",
-                filter: "blur(30px)",
+                  "radial-gradient(circle, rgba(200,150,70,0.5), transparent 62%)",
+                filter: "blur(38px)",
                 animation: "logo-glow 3s ease-in-out infinite",
               }}
             />
@@ -114,17 +114,17 @@ export default function LampGate() {
             <img
               src="/logo.webp"
               alt="Chmicha AI"
-              className="relative h-36 w-36 object-contain"
+              className="relative h-44 w-72 object-contain"
               style={{
-                filter: "drop-shadow(0 0 26px rgba(245,197,66,0.45))",
+                filter: "drop-shadow(0 0 30px rgba(220,170,80,0.4))",
               }}
             />
           </div>
           <h1
-            className="font-display mt-6 text-4xl font-extrabold tracking-tight animate-rise-in"
-            style={{ color: "var(--text)" }}
+            className="font-display mt-4 text-4xl font-extrabold tracking-tight animate-rise-in"
+            style={{ color: "#f2efe6" }}
           >
-            Chmicha <span style={{ color: "var(--accent)" }}>AI</span>
+            Chmicha <span style={{ color: "#e0aa3e" }}>AI</span>
           </h1>
         </div>
 
@@ -159,9 +159,8 @@ export default function LampGate() {
             type="button"
             className="flex w-full items-center justify-center gap-3 rounded-3xl px-4 py-3.5 text-base font-semibold"
             style={{
-              border: "1px solid var(--border-strong)",
-              color: "var(--text)",
-              opacity: 0.75,
+              border: "1px solid rgba(255,255,255,0.16)",
+              color: "#ece9df",
             }}
           >
             <GoogleG />
@@ -169,9 +168,9 @@ export default function LampGate() {
             <span
               className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
               style={{
-                background: "var(--bg-soft)",
-                border: "1px solid var(--border)",
-                color: "var(--text-faint)",
+                background: "#1a1a1a",
+                border: "1px solid #333",
+                color: "#8a8a84",
               }}
             >
               {ar.soonBadge}
@@ -183,8 +182,8 @@ export default function LampGate() {
               onClick={() => setFormOpen(true)}
               className="w-full rounded-3xl px-4 py-3.5 text-base font-semibold transition hover:opacity-80"
               style={{
-                border: "1px solid var(--border-strong)",
-                color: "var(--text)",
+                border: "1px solid rgba(255,255,255,0.16)",
+                color: "#ece9df",
               }}
             >
               {ar.loginAnother}
@@ -199,9 +198,9 @@ export default function LampGate() {
                 autoFocus
                 className="w-full rounded-3xl px-4 py-3.5 text-center text-base outline-none"
                 style={{
-                  background: "var(--bg-soft)",
-                  border: "1px solid var(--border-strong)",
-                  color: "var(--text)",
+                  background: "#161616",
+                  border: "1px solid #2e2e2e",
+                  color: "#f2efe6",
                 }}
               />
               <button
@@ -218,11 +217,11 @@ export default function LampGate() {
     );
   }
 
-  /* ── Phase 1: rub the lamp ── */
+  /* ── Phase 1: rub the lamp — always dark, cinematic ── */
   return (
     <div
       className="fixed inset-0 z-[100] flex flex-col items-center justify-center px-6"
-      style={{ background: "var(--bg)" }}
+      style={{ background: "#0c0c0c" }}
     >
       {/* Lamp zone */}
       <div
@@ -266,13 +265,13 @@ export default function LampGate() {
         <>
           <p
             className="mt-6 text-center text-base font-semibold"
-            style={{ color: "var(--text)" }}
+            style={{ color: "#f2efe6" }}
           >
             {ar.lampRub}
           </p>
           <div
             className="mt-4 h-1.5 w-48 overflow-hidden rounded-full"
-            style={{ background: "var(--bg-soft)" }}
+            style={{ background: "#1c1c1c" }}
           >
             <div
               className="h-full rounded-full"
