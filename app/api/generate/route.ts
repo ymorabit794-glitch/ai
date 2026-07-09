@@ -48,16 +48,26 @@ async function enhancePrompt(raw: string): Promise<string> {
 // configured Gemini key; returns null when quota is out or it fails,
 // so the caller falls back to the free providers.
 async function nanoBanana(prompt: string): Promise<string | null> {
-  const keys = [
-    process.env.GEMINI_API_KEY,
-    process.env.GEMINI_API_KEY_2,
-    process.env.GEMINI_API_KEY_3,
-  ].filter((k): k is string => !!k);
+  // Each key gets its own image model: newer Google accounts only have
+  // the newer image models (gemini-3.1-flash-image), older ones use
+  // gemini-2.5-flash-image.
+  const baseModel = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
+  const pairs = [
+    { key: process.env.GEMINI_API_KEY, model: baseModel },
+    {
+      key: process.env.GEMINI_API_KEY_2,
+      model: process.env.GEMINI_IMAGE_MODEL_2 || "gemini-3.1-flash-image",
+    },
+    {
+      key: process.env.GEMINI_API_KEY_3,
+      model: process.env.GEMINI_IMAGE_MODEL_3 || baseModel,
+    },
+  ].filter((p): p is { key: string; model: string } => !!p.key);
 
-  for (const key of keys) {
+  for (const { key, model } of pairs) {
     try {
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${key}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

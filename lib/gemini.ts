@@ -22,14 +22,23 @@ export interface GeminiStreamParams {
  * history (so the judge remembers what was said earlier).
  */
 // All configured API keys (different Google accounts = separate free
-// quotas). When one key's quota is exhausted (429), the next key takes
-// over automatically.
-function getApiKeys(): string[] {
+// quotas), each paired with its own model: newer Google accounts only
+// get newer models (e.g. account 1 → gemini-2.5-flash, account 2 →
+// gemini-3.1-flash-lite). When one key fails (quota out, model not
+// available), the next pair takes over automatically.
+function getKeyModelPairs(): Array<{ key: string; model: string }> {
+  const base = process.env.GEMINI_MODEL || DEFAULT_MODEL;
   return [
-    process.env.GEMINI_API_KEY,
-    process.env.GEMINI_API_KEY_2,
-    process.env.GEMINI_API_KEY_3,
-  ].filter((k): k is string => !!k && k.trim().length > 0);
+    { key: process.env.GEMINI_API_KEY, model: base },
+    {
+      key: process.env.GEMINI_API_KEY_2,
+      model: process.env.GEMINI_MODEL_2 || base,
+    },
+    {
+      key: process.env.GEMINI_API_KEY_3,
+      model: process.env.GEMINI_MODEL_3 || base,
+    },
+  ].filter((p): p is { key: string; model: string } => !!p.key);
 }
 
 export async function* streamGeminiText({
@@ -37,12 +46,10 @@ export async function* streamGeminiText({
   systemPrompt,
   image,
 }: GeminiStreamParams): AsyncGenerator<string> {
-  const apiKeys = getApiKeys();
-  if (apiKeys.length === 0) {
+  const pairs = getKeyModelPairs();
+  if (pairs.length === 0) {
     throw new Error("GEMINI_API_KEY is not set. Add it to .env.local");
   }
-
-  const model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
 
   const contents = history.map((turn) => ({
     role: turn.role,
@@ -85,15 +92,15 @@ export async function* streamGeminiText({
     ],
   };
 
-  // Try each API key in order. 429 (quota exhausted) on one key →
-  // switch to the next key automatically. 503 (temporary overload) is
-  // retried on the same key with backoff.
+  // Try each key+model pair in order. 429 (quota), 400/403 (bad key),
+  // 404 (model not available to this account) → next pair. 503
+  // (temporary overload) is retried on the same pair with backoff.
   let res: Response | null = null;
   let lastError = "";
-  keyLoop: for (let k = 0; k < apiKeys.length; k++) {
+  keyLoop: for (let k = 0; k < pairs.length; k++) {
     const url =
       `https://generativelanguage.googleapis.com/v1beta/models/` +
-      `${model}:streamGenerateContent?alt=sse&key=${apiKeys[k]}`;
+      `${pairs[k].model}:streamGenerateContent?alt=sse&key=${pairs[k].key}`;
 
     const maxAttempts = 3;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -104,13 +111,12 @@ export async function* streamGeminiText({
       });
 
       if (res.ok && res.body) {
-        if (k > 0) console.log(`[gemini] using API key #${k + 1}`);
+        if (k > 0)
+          console.log(`[gemini] using key #${k + 1} (${pairs[k].model})`);
         break keyLoop;
       }
 
-      // 429 = quota exhausted; 400/403 = invalid or blocked key.
-      // Either way this key is useless right now — try the next one.
-      if (res.status === 429 || res.status === 400 || res.status === 403) {
+      if ([429, 400, 403, 404].includes(res.status)) {
         lastError = `key #${k + 1} failed (${res.status})`;
         console.log(`[gemini] ${lastError} — trying next key`);
         continue keyLoop;
