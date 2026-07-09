@@ -44,7 +44,50 @@ async function enhancePrompt(raw: string): Promise<string> {
   }
 }
 
-// Image generation. Primary: Cloudflare Workers AI (Flux, free, 1024px).
+// Nano Banana (Gemini image generation) — best quality. Tries every
+// configured Gemini key; returns null when quota is out or it fails,
+// so the caller falls back to the free providers.
+async function nanoBanana(prompt: string): Promise<string | null> {
+  const keys = [
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_2,
+    process.env.GEMINI_API_KEY_3,
+  ].filter((k): k is string => !!k);
+
+  for (const key of keys) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${key}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+          }),
+          signal: AbortSignal.timeout(45000),
+        }
+      );
+      if (!res.ok) continue; // quota/billing → next key or fallback
+      const data = await res.json();
+      const parts = data?.candidates?.[0]?.content?.parts;
+      if (Array.isArray(parts)) {
+        for (const p of parts) {
+          const inline = p?.inlineData;
+          if (inline?.data) {
+            const mime = inline.mimeType || "image/png";
+            return `data:${mime};base64,${inline.data}`;
+          }
+        }
+      }
+    } catch {
+      /* try next key */
+    }
+  }
+  return null;
+}
+
+// Image generation. Primary: Nano Banana (Gemini) when quota allows.
+// Then: Cloudflare Workers AI (Flux, free, 1024px).
 // Fallback: Pollinations (free, no key) if Cloudflare is unavailable.
 export async function POST(req: NextRequest) {
   let prompt = "";
@@ -59,6 +102,9 @@ export async function POST(req: NextRequest) {
   const enhanced = await enhancePrompt(prompt);
   const styled =
     enhanced + ", highly detailed, sharp focus, cinematic lighting, 4k";
+
+  const banana = await nanoBanana(styled);
+  if (banana) return Response.json({ image: banana });
 
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
   const token = process.env.CLOUDFLARE_API_TOKEN;

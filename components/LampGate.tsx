@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useLang } from "@/lib/i18n";
 
-// Magic-lamp entry gate: rub the lamp (mouse hover-move on desktop,
-// finger drag on mobile) until it lights. The lamp shows on EVERY
-// visit; the sign-in card only appears the first time (no profile yet).
-// Returning visitors enter automatically once the lamp is lit.
+// Magic-lamp entry gate: rub the lamp until it lights (every visit),
+// then the account screen appears (logo + Chmicha AI + sign-in buttons,
+// styled like the app's design). Sign-up happens only once — returning
+// visitors get a "Continue with this account" pill.
 
 const PROFILE_KEY = "chmicha.profile.v1";
 const RUB_DISTANCE = 700; // px of pointer movement needed to light it
@@ -16,17 +16,19 @@ export default function LampGate() {
   const [show, setShow] = useState(false);
   const [progress, setProgress] = useState(0); // 0..1
   const [lit, setLit] = useState(false);
-  const [formVisible, setFormVisible] = useState(false);
+  const [phase, setPhase] = useState<"lamp" | "account">("lamp");
+  const [formOpen, setFormOpen] = useState(false);
   const [name, setName] = useState("");
+  const [profileName, setProfileName] = useState("");
   const lastPos = useRef<{ x: number; y: number } | null>(null);
   const litRef = useRef(false);
-  const hasProfile = useRef(false);
 
   useEffect(() => {
     try {
-      hasProfile.current = !!localStorage.getItem(PROFILE_KEY);
+      const raw = localStorage.getItem(PROFILE_KEY);
+      if (raw) setProfileName(JSON.parse(raw)?.name || "");
     } catch {
-      hasProfile.current = false;
+      /* ignore */
     }
     setShow(true); // the lamp greets you on every visit
   }, []);
@@ -35,12 +37,7 @@ export default function LampGate() {
     if (litRef.current) return;
     litRef.current = true;
     setLit(true);
-    if (hasProfile.current) {
-      // Already signed in: enjoy the flame a moment, then enter.
-      setTimeout(() => setShow(false), 1500);
-    } else {
-      setTimeout(() => setFormVisible(true), 1000);
-    }
+    setTimeout(() => setPhase("account"), 1300);
   }
 
   function onMove(e: React.PointerEvent) {
@@ -61,6 +58,10 @@ export default function LampGate() {
     lastPos.current = null;
   }
 
+  function enter() {
+    setShow(false);
+  }
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const n = name.trim();
@@ -76,8 +77,148 @@ export default function LampGate() {
     setShow(false);
   }
 
+  const initials =
+    profileName
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase() || "🙂";
+
   if (!show) return null;
 
+  /* ── Phase 2: account screen (like the design) ── */
+  if (phase === "account") {
+    return (
+      <div
+        className="fixed inset-0 z-[100] flex flex-col items-center px-6 py-10"
+        style={{ background: "var(--bg)" }}
+      >
+        {/* Hero: logo with golden glow + wordmark */}
+        <div className="flex flex-1 flex-col items-center justify-center">
+          <div className="relative animate-rise-in">
+            <div
+              aria-hidden
+              style={{
+                position: "absolute",
+                inset: "-55%",
+                borderRadius: "50%",
+                background:
+                  "radial-gradient(circle, rgba(245,197,66,0.4), transparent 65%)",
+                filter: "blur(30px)",
+                animation: "logo-glow 3s ease-in-out infinite",
+              }}
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.webp"
+              alt="Chmicha AI"
+              className="relative h-36 w-36 object-contain"
+              style={{
+                filter: "drop-shadow(0 0 26px rgba(245,197,66,0.45))",
+              }}
+            />
+          </div>
+          <h1
+            className="font-display mt-6 text-4xl font-extrabold tracking-tight animate-rise-in"
+            style={{ color: "var(--text)" }}
+          >
+            Chmicha <span style={{ color: "var(--accent)" }}>AI</span>
+          </h1>
+        </div>
+
+        {/* Buttons */}
+        <div className="w-full max-w-sm space-y-3 animate-rise-in">
+          {profileName && !formOpen && (
+            <button
+              onClick={enter}
+              className="flex w-full items-center gap-3 rounded-3xl px-4 py-3 text-start transition hover:opacity-90"
+              style={{ background: "#efece1", color: "#1c1c1a" }}
+            >
+              <span
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-extrabold text-white"
+                style={{
+                  background: "linear-gradient(135deg, #5fb8a5, #f5b301)",
+                }}
+              >
+                {initials}
+              </span>
+              <span className="min-w-0">
+                <span className="block text-base font-bold">
+                  {ar.continueAccount}
+                </span>
+                <span className="block truncate text-sm opacity-60">
+                  {profileName}
+                </span>
+              </span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="flex w-full items-center justify-center gap-3 rounded-3xl px-4 py-3.5 text-base font-semibold"
+            style={{
+              border: "1px solid var(--border-strong)",
+              color: "var(--text)",
+              opacity: 0.75,
+            }}
+          >
+            <GoogleG />
+            {ar.continueGoogle}
+            <span
+              className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+              style={{
+                background: "var(--bg-soft)",
+                border: "1px solid var(--border)",
+                color: "var(--text-faint)",
+              }}
+            >
+              {ar.soonBadge}
+            </span>
+          </button>
+
+          {!formOpen ? (
+            <button
+              onClick={() => setFormOpen(true)}
+              className="w-full rounded-3xl px-4 py-3.5 text-base font-semibold transition hover:opacity-80"
+              style={{
+                border: "1px solid var(--border-strong)",
+                color: "var(--text)",
+              }}
+            >
+              {ar.loginAnother}
+            </button>
+          ) : (
+            <form onSubmit={submit} className="space-y-3">
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={ar.namePlaceholder}
+                dir="auto"
+                autoFocus
+                className="w-full rounded-3xl px-4 py-3.5 text-center text-base outline-none"
+                style={{
+                  background: "var(--bg-soft)",
+                  border: "1px solid var(--border-strong)",
+                  color: "var(--text)",
+                }}
+              />
+              <button
+                type="submit"
+                disabled={!name.trim()}
+                className="gold-gradient w-full rounded-3xl px-4 py-3.5 text-base font-extrabold transition disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {ar.signInBtn}
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Phase 1: rub the lamp ── */
   return (
     <div
       className="fixed inset-0 z-[100] flex flex-col items-center justify-center px-6"
@@ -145,53 +286,30 @@ export default function LampGate() {
           </div>
         </>
       )}
-
-      {/* Sign-in card after lighting — first visit only */}
-      {lit && !hasProfile.current && (
-        <div
-          className={`mt-8 w-full max-w-sm transition-all duration-700 ${
-            formVisible
-              ? "translate-y-0 opacity-100"
-              : "translate-y-6 opacity-0"
-          }`}
-        >
-          <form
-            onSubmit={submit}
-            className="premium-card rounded-3xl p-6 text-center"
-          >
-            <h2
-              className="font-display text-xl font-extrabold"
-              style={{ color: "var(--text)" }}
-            >
-              {ar.signInTitle}
-            </h2>
-            <p className="mt-1.5 text-sm" style={{ color: "var(--text-muted)" }}>
-              {ar.signInSub}
-            </p>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={ar.namePlaceholder}
-              dir="auto"
-              autoFocus
-              className="mt-5 w-full rounded-2xl px-4 py-3 text-center text-base outline-none"
-              style={{
-                background: "var(--bg-soft)",
-                border: "1px solid var(--border-strong)",
-                color: "var(--text)",
-              }}
-            />
-            <button
-              type="submit"
-              disabled={!name.trim()}
-              className="gold-gradient mt-4 w-full rounded-2xl px-4 py-3 text-base font-extrabold transition disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {ar.signInBtn}
-            </button>
-          </form>
-        </div>
-      )}
     </div>
+  );
+}
+
+function GoogleG() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden>
+      <path
+        fill="#4285F4"
+        d="M23.5 12.27c0-.85-.08-1.66-.22-2.45H12v4.64h6.46a5.53 5.53 0 0 1-2.4 3.63v3h3.88c2.27-2.1 3.56-5.18 3.56-8.82z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.96-1.07 7.94-2.91l-3.88-3c-1.08.72-2.45 1.15-4.06 1.15-3.12 0-5.77-2.11-6.71-4.95H1.28v3.1A12 12 0 0 0 12 24z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.29 14.29a7.2 7.2 0 0 1 0-4.58v-3.1H1.28a12 12 0 0 0 0 10.78l4.01-3.1z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.76c1.76 0 3.34.6 4.58 1.8l3.44-3.44A11.97 11.97 0 0 0 12 0 12 12 0 0 0 1.28 6.61l4.01 3.1C6.23 6.87 8.88 4.76 12 4.76z"
+      />
+    </svg>
   );
 }
 

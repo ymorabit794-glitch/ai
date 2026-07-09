@@ -6,6 +6,7 @@ import PlayButton from "./PlayButton";
 import ThemeToggle from "./ThemeToggle";
 import LanguageToggle from "./LanguageToggle";
 import LampGate from "./LampGate";
+import SettingsPanel from "./SettingsPanel";
 import Markdown from "./Markdown";
 import {
   loadConversations,
@@ -143,6 +144,7 @@ export default function Chat() {
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [showAll, setShowAll] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -522,12 +524,19 @@ export default function Chat() {
       hasMore={hasMore}
       showAll={showAll}
       onToggleMore={() => setShowAll((v) => !v)}
+      onOpenSettings={() => {
+        setSidebarOpen(false);
+        setSettingsOpen(true);
+      }}
     />
   );
 
   return (
     <div className="flex h-dvh w-full flex-col">
         <LampGate />
+        {settingsOpen && (
+          <SettingsPanel onClose={() => setSettingsOpen(false)} />
+        )}
 
         {/* Menu drawer */}
         {sidebarOpen && (
@@ -797,6 +806,7 @@ function SidebarContent({
   hasMore,
   showAll,
   onToggleMore,
+  onOpenSettings,
 }: {
   groups: Group[];
   activeId: string | null;
@@ -810,6 +820,7 @@ function SidebarContent({
   hasMore: boolean;
   showAll: boolean;
   onToggleMore: () => void;
+  onOpenSettings: () => void;
 }) {
   const ar = useLang();
   const [view, setView] = useState<"menu" | "history">("menu");
@@ -895,9 +906,10 @@ function SidebarContent({
           )}
         </nav>
 
-        {/* Profile */}
-        <div
-          className="mt-2 flex items-center gap-3 border-t pt-4"
+        {/* Profile — opens settings */}
+        <button
+          onClick={onOpenSettings}
+          className="mt-2 flex w-full items-center gap-3 border-t pt-4 text-start transition hover:opacity-80"
           style={{ borderColor: "var(--border)" }}
         >
           <div
@@ -915,7 +927,7 @@ function SidebarContent({
             {profileName || "Chmicha"}
           </span>
           <ChevronIcon />
-        </div>
+        </button>
       </div>
     );
   }
