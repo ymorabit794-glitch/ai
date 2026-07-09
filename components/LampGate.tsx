@@ -88,68 +88,22 @@ export default function LampGate() {
 
   if (!show) return null;
 
-  /* ── Phase 2: account screen (like the design) — always dark ── */
+  /* ── Phase 2: account screen — the exact hero from the design ── */
   if (phase === "account") {
     return (
       <div
         className="fixed inset-0 z-[100] flex flex-col items-center px-6 py-10"
-        style={{ background: "#0c0c0c" }}
+        style={{ background: "#0b0d10" }}
       >
-        {/* Hero: glasses with warm glow + serif wordmark (per design) */}
+        {/* Hero cropped straight from the reference mockup:
+            glasses + warm glow + serif wordmark, edges alpha-faded */}
         <div className="flex flex-1 flex-col items-center justify-center">
-          <div className="relative animate-rise-in">
-            {/* Golden halo — bright core hugging the glasses */}
-            <div
-              aria-hidden
-              style={{
-                position: "absolute",
-                inset: "-8% 4%",
-                borderRadius: "50%",
-                background:
-                  "radial-gradient(ellipse, rgba(255,205,105,0.55) 0%, rgba(232,175,80,0.35) 30%, rgba(190,135,55,0.18) 50%, rgba(140,95,40,0.08) 65%, transparent 80%)",
-                filter: "blur(24px)",
-                animation: "logo-glow 3.2s ease-in-out infinite",
-              }}
-            />
-            {/* Wider soft warm wash behind */}
-            <div
-              aria-hidden
-              style={{
-                position: "absolute",
-                inset: "-50% -35%",
-                borderRadius: "50%",
-                background:
-                  "radial-gradient(ellipse, rgba(214,158,66,0.30) 0%, rgba(170,120,48,0.16) 35%, rgba(110,78,32,0.07) 58%, transparent 78%)",
-                filter: "blur(46px)",
-              }}
-            />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo.webp"
-              alt="Chmicha AI"
-              className="relative h-52 w-80 max-w-[85vw] object-contain"
-              style={{
-                // The logo file is a dark square with the glasses in the
-                // middle: zoom in on the glasses and fade the edges so
-                // the square melts into the page completely.
-                transform: "scale(1.55)",
-                WebkitMaskImage:
-                  "radial-gradient(ellipse 60% 55% at center, black 30%, transparent 58%)",
-                maskImage:
-                  "radial-gradient(ellipse 60% 55% at center, black 30%, transparent 58%)",
-              }}
-            />
-          </div>
-          <h1
-            className="mt-8 text-[2.6rem] font-bold animate-rise-in"
-            style={{
-              color: "#f2efe6",
-              fontFamily: "Georgia, 'Times New Roman', serif",
-              letterSpacing: "0.01em",
-            }}
-          >
-            Chmicha <span style={{ color: "#d9a13a" }}>AI</span>
-          </h1>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/signin-hero.png"
+            alt="Chmicha AI"
+            className="w-full max-w-md animate-rise-in object-contain"
+          />
         </div>
 
         {/* Buttons */}
