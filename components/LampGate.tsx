@@ -98,17 +98,29 @@ export default function LampGate() {
         {/* Hero: glasses with warm glow + serif wordmark (per design) */}
         <div className="flex flex-1 flex-col items-center justify-center">
           <div className="relative animate-rise-in">
-            {/* Warm glow hugging the glasses */}
+            {/* Golden halo — bright core hugging the glasses */}
             <div
               aria-hidden
               style={{
                 position: "absolute",
-                inset: "-20% -12%",
+                inset: "-8% 4%",
                 borderRadius: "50%",
                 background:
-                  "radial-gradient(ellipse, rgba(196,146,66,0.55), rgba(120,85,35,0.25) 45%, transparent 70%)",
-                filter: "blur(30px)",
+                  "radial-gradient(ellipse, rgba(255,205,105,0.55) 0%, rgba(232,175,80,0.35) 30%, rgba(190,135,55,0.18) 50%, rgba(140,95,40,0.08) 65%, transparent 80%)",
+                filter: "blur(24px)",
                 animation: "logo-glow 3.2s ease-in-out infinite",
+              }}
+            />
+            {/* Wider soft warm wash behind */}
+            <div
+              aria-hidden
+              style={{
+                position: "absolute",
+                inset: "-50% -35%",
+                borderRadius: "50%",
+                background:
+                  "radial-gradient(ellipse, rgba(214,158,66,0.30) 0%, rgba(170,120,48,0.16) 35%, rgba(110,78,32,0.07) 58%, transparent 78%)",
+                filter: "blur(46px)",
               }}
             />
             {/* eslint-disable-next-line @next/next/no-img-element */}
