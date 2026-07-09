@@ -95,42 +95,48 @@ export default function LampGate() {
         className="fixed inset-0 z-[100] flex flex-col items-center px-6 py-10"
         style={{ background: "#0c0c0c" }}
       >
-        {/* Hero: logo with golden glow + wordmark */}
+        {/* Hero: glasses with warm glow + serif wordmark (per design) */}
         <div className="flex flex-1 flex-col items-center justify-center">
           <div className="relative animate-rise-in">
+            {/* Warm glow hugging the glasses */}
             <div
               aria-hidden
               style={{
                 position: "absolute",
-                inset: "-70% -45%",
+                inset: "-20% -12%",
                 borderRadius: "50%",
                 background:
-                  "radial-gradient(circle, rgba(200,150,70,0.5), transparent 62%)",
-                filter: "blur(38px)",
-                animation: "logo-glow 3s ease-in-out infinite",
+                  "radial-gradient(ellipse, rgba(196,146,66,0.55), rgba(120,85,35,0.25) 45%, transparent 70%)",
+                filter: "blur(30px)",
+                animation: "logo-glow 3.2s ease-in-out infinite",
               }}
             />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo.webp"
               alt="Chmicha AI"
-              className="relative h-56 w-56 object-contain"
+              className="relative h-52 w-80 max-w-[85vw] object-contain"
               style={{
-                // The logo file has a dark square background — fade its
-                // edges out so it melts into the page and only the
-                // glasses + spotlight remain visible.
+                // The logo file is a dark square with the glasses in the
+                // middle: zoom in on the glasses and fade the edges so
+                // the square melts into the page completely.
+                transform: "scale(1.55)",
                 WebkitMaskImage:
-                  "radial-gradient(circle, black 42%, transparent 68%)",
+                  "radial-gradient(ellipse 60% 55% at center, black 30%, transparent 58%)",
                 maskImage:
-                  "radial-gradient(circle, black 42%, transparent 68%)",
+                  "radial-gradient(ellipse 60% 55% at center, black 30%, transparent 58%)",
               }}
             />
           </div>
           <h1
-            className="font-display mt-4 text-4xl font-extrabold tracking-tight animate-rise-in"
-            style={{ color: "#f2efe6" }}
+            className="mt-8 text-[2.6rem] font-bold animate-rise-in"
+            style={{
+              color: "#f2efe6",
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              letterSpacing: "0.01em",
+            }}
           >
-            Chmicha <span style={{ color: "#e0aa3e" }}>AI</span>
+            Chmicha <span style={{ color: "#d9a13a" }}>AI</span>
           </h1>
         </div>
 
@@ -163,7 +169,8 @@ export default function LampGate() {
 
           <button
             type="button"
-            className="flex w-full items-center justify-center gap-3 rounded-3xl px-4 py-3.5 text-base font-semibold"
+            onClick={() => setFormOpen(true)}
+            className="flex w-full items-center justify-center gap-3 rounded-3xl px-4 py-3.5 text-base font-semibold transition hover:opacity-80"
             style={{
               border: "1px solid rgba(255,255,255,0.16)",
               color: "#ece9df",
@@ -171,16 +178,6 @@ export default function LampGate() {
           >
             <GoogleG />
             {ar.continueGoogle}
-            <span
-              className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-              style={{
-                background: "#1a1a1a",
-                border: "1px solid #333",
-                color: "#8a8a84",
-              }}
-            >
-              {ar.soonBadge}
-            </span>
           </button>
 
           {!formOpen ? (
