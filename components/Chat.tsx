@@ -554,9 +554,9 @@ export default function Chat() {
           </div>
         )}
 
-        {/* Top bar */}
+        {/* Top bar: menu · centered title · new chat (per design) */}
         <header
-          className="glass sticky top-0 z-20 flex items-center gap-3 px-4 py-3"
+          className="glass sticky top-0 z-20 flex items-center justify-between px-4 py-3"
           style={{ borderBottom: "1px solid var(--border)" }}
         >
           <button
@@ -568,6 +568,47 @@ export default function Chat() {
             style={{ color: "var(--text-muted)" }}
           >
             <MenuIcon />
+          </button>
+
+          <span
+            className="flex items-center gap-1.5 text-[17px] font-semibold"
+            style={{ color: "var(--text)" }}
+          >
+            Chmicha AI
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--text-faint)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </span>
+
+          <button
+            type="button"
+            onClick={newChat}
+            aria-label={ar.newChat}
+            title={ar.newChat}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl transition hover:bg-black/5 dark:hover:bg-white/5"
+            style={{ color: "var(--text-muted)" }}
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 8.5v7M8.5 12h7" />
+            </svg>
           </button>
         </header>
 
@@ -609,7 +650,7 @@ export default function Chat() {
         <div className="px-4 pb-4 pt-2">
           <div className="mx-auto w-full max-w-3xl">
             <div
-              className="focus-glow rounded-[26px] p-2 transition"
+              className="focus-glow rounded-[30px] p-2 transition"
               style={{
                 background: "var(--card)",
                 border: "1px solid var(--border-strong)",
@@ -683,7 +724,18 @@ export default function Chat() {
                     className="mb-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-40"
                     style={{ color: "var(--text-muted)" }}
                   >
-                    <PlusBig />
+                    <svg
+                      width="26"
+                      height="26"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M12 8.5v7M8.5 12h7" />
+                    </svg>
                   </button>
                   {menuOpen && (
                     <>
@@ -726,6 +778,19 @@ export default function Chat() {
                   )}
                 </div>
 
+                <textarea
+                  ref={taRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={onKeyDown}
+                  placeholder={genMode ? ar.genPlaceholder : ar.placeholder}
+                  rows={1}
+                  dir="auto"
+                  wrap="off"
+                  className="min-w-0 flex-1 resize-none overflow-x-auto bg-transparent px-2 py-3 text-base outline-none"
+                  style={{ color: "var(--text)" }}
+                />
+
                 <button
                   type="button"
                   onClick={toggleMic}
@@ -748,19 +813,6 @@ export default function Chat() {
                   )}
                 </button>
 
-                <textarea
-                  ref={taRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={onKeyDown}
-                  placeholder={genMode ? ar.genPlaceholder : ar.placeholder}
-                  rows={1}
-                  dir="auto"
-                  wrap="off"
-                  className="min-w-0 flex-1 resize-none overflow-x-auto bg-transparent px-2 py-3 text-base outline-none"
-                  style={{ color: "var(--text)" }}
-                />
-
                 <button
                   onClick={() => send(input)}
                   disabled={(!input.trim() && !pendingImage) || isStreaming}
@@ -772,7 +824,24 @@ export default function Chat() {
                       : undefined
                   }
                 >
-                  {isStreaming ? <Spinner /> : <SendIcon />}
+                  {isStreaming ? (
+                    <Spinner />
+                  ) : (
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="rtl:-scale-x-100"
+                    >
+                      <path d="M7 17L17 7" />
+                      <path d="M9 7h8v8" />
+                    </svg>
+                  )}
                 </button>
               </div>
             </div>
@@ -1191,11 +1260,12 @@ function MessageRow({
     message.content === ar.errorGeneric || message.content === ar.errorQuota;
 
   if (isUser) {
+    // Per the design: right-aligned soft gray bubble, no avatar, no time.
     return (
-      <div className="flex animate-rise-in justify-start gap-3">
-        <div className="order-2 max-w-[82%]">
+      <div className="flex animate-rise-in justify-end">
+        <div className="max-w-[82%]">
           <div
-            className="overflow-hidden rounded-2xl rounded-tr-md"
+            className="overflow-hidden rounded-[22px]"
             style={{
               background: "var(--user-bubble)",
               border: "1px solid var(--user-bubble-border)",
@@ -1216,62 +1286,68 @@ function MessageRow({
               </div>
             )}
           </div>
-          <div
-            className="mt-1 text-end text-[10px]"
-            style={{ color: "var(--text-faint)" }}
-          >
-            {formatTime(message.ts)}
-          </div>
-        </div>
-        <div className="order-1 mt-0.5 shrink-0">
-          <UserAvatar />
         </div>
       </div>
     );
   }
 
+  // Assistant: no bubble — plain text next to a small gradient avatar,
+  // with a flat action row underneath (per the design).
   return (
     <div className="flex animate-rise-in justify-start gap-3">
-      <div className="mt-0.5 shrink-0">
-        <BrandAvatar size={32} />
+      <div className="mt-1 shrink-0">
+        <GlassesAvatar />
       </div>
-      <div className="max-w-[85%]">
-        <div className="premium-card overflow-hidden rounded-2xl rounded-tl-md">
-          {message.image && <ChatImage src={message.image} />}
-          {!message.image && imageLoading && (
-            <div
-              className="flex items-center justify-center gap-2 px-4 py-12"
-              style={{ color: "var(--text-muted)" }}
-            >
-              <Spinner />
-              <span className="text-sm">{ar.generatingImage}</span>
-            </div>
-          )}
-          {(message.content || streaming) && !imageLoading && (
-            <div className="px-4 py-3" style={{ color: "var(--text)" }}>
-              <Markdown>{message.content}</Markdown>
-              {streaming && (
-                <span
-                  className="ms-1 inline-block h-4 w-[2px] translate-y-0.5 animate-cursor-blink align-middle"
-                  style={{ background: "var(--accent-2)" }}
-                />
-              )}
-            </div>
-          )}
-        </div>
+      <div className="min-w-0 max-w-[85%] flex-1">
+        {message.image && (
+          <div
+            className="overflow-hidden rounded-2xl"
+            style={{ border: "1px solid var(--border)" }}
+          >
+            <ChatImage src={message.image} />
+          </div>
+        )}
+        {!message.image && imageLoading && (
+          <div
+            className="flex items-center gap-2 py-2"
+            style={{ color: "var(--text-muted)" }}
+          >
+            <Spinner />
+            <span className="text-sm">{ar.generatingImage}</span>
+          </div>
+        )}
+        {(message.content || streaming) && !imageLoading && (
+          <div className="pt-0.5" style={{ color: "var(--text)" }}>
+            <Markdown>{message.content}</Markdown>
+            {streaming && (
+              <span
+                className="ms-1 inline-block h-4 w-[2px] translate-y-0.5 animate-cursor-blink align-middle"
+                style={{ background: "var(--accent-2)" }}
+              />
+            )}
+          </div>
+        )}
         {!streaming && (message.content || message.image) && !isError && (
-          <div className="mt-1.5 flex items-center gap-1 px-1">
-            {message.content && <PlayButton text={message.content} />}
+          <div className="mt-2 flex items-center gap-2">
             {message.content && <MessageActions content={message.content} />}
-            <span
-              className="ms-1 text-[10px]"
-              style={{ color: "var(--text-faint)" }}
-            >
-              {formatTime(message.ts)}
-            </span>
+            {message.content && <PlayButton text={message.content} />}
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* Small gradient avatar with sunglasses, like the design */
+function GlassesAvatar() {
+  return (
+    <div
+      className="flex h-8 w-8 items-center justify-center rounded-full"
+      style={{ background: "linear-gradient(135deg, #5fb8a5, #d9a13a)" }}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="#20211f">
+        <path d="M2 9h20v2h-1l-.6 3.2A2.5 2.5 0 0 1 17.9 16h-2.3a2.5 2.5 0 0 1-2.45-2l-.4-1.8a.8.8 0 0 0-1.5 0l-.4 1.8a2.5 2.5 0 0 1-2.45 2H6.1a2.5 2.5 0 0 1-2.5-1.8L3 11H2z" />
+      </svg>
     </div>
   );
 }

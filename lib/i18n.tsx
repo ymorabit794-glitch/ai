@@ -69,7 +69,7 @@ export const en = {
   groupMonth: "Last month",
   groupOlder: "Older",
 
-  placeholder: "Ask anything…",
+  placeholder: "Message Chmicha AI",
   send: "Send",
   sending: "Thinking…",
   attachImage: "Add image",
@@ -169,7 +169,7 @@ export const ar: typeof en = {
   groupMonth: "الشهر الماضي",
   groupOlder: "أقدم",
 
-  placeholder: "اكتب رسالتك…",
+  placeholder: "راسل شميشة…",
   send: "إرسال",
   sending: "كيفكر…",
   attachImage: "أضف صورة",
