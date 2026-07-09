@@ -114,9 +114,15 @@ export default function LampGate() {
             <img
               src="/logo.webp"
               alt="Chmicha AI"
-              className="relative h-44 w-72 object-contain"
+              className="relative h-56 w-56 object-contain"
               style={{
-                filter: "drop-shadow(0 0 30px rgba(220,170,80,0.4))",
+                // The logo file has a dark square background — fade its
+                // edges out so it melts into the page and only the
+                // glasses + spotlight remain visible.
+                WebkitMaskImage:
+                  "radial-gradient(circle, black 42%, transparent 68%)",
+                maskImage:
+                  "radial-gradient(circle, black 42%, transparent 68%)",
               }}
             />
           </div>
